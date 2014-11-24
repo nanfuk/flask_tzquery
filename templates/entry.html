@@ -21,17 +21,18 @@
 	function judgeval(){
 		var searchrecord = $.cookie("searchrecord");
 		inputval = $.trim($("input#box1").val());
-		$("input#box1").val("") //更改input框内容
+		//$("input#box1").val("") //更改input框内容
 		if (inputval=="")
 		{
 			alert("输入不能为空！");
+			return false;
 		}
 		else{
-		searchrecord = searchrecord+"||"+inputval;
-		modifyrecord(searchrecord);
-		$.get("/tzquery", {key:inputval});}
+			searchrecord = searchrecord+"||"+inputval;
+			modifyrecord(searchrecord);
+			return true;
 		}
-
+	}
 	function modifyrecord(searchrecord){
 		
 		//var searchrecord = $.cookie("searchrecord");
@@ -55,7 +56,7 @@
 				}
 				else
 				{
-					html += "<li class='lis'><a href=/tzquery?key="+textval+" target='_blank'>"+textval+"</a></li></br>";
+					html += "<li class='lis'><a href=/tzquery?key="+encodeURIComponent(textval)+" target='_blank'>"+textval+"</a></li></br>";
 					forlength += 1;
 					stringcookie=textval+"||"+stringcookie;
 				}
@@ -68,17 +69,17 @@
 </script>
 </head>
 <body>
-	<!--
     <form action="/tzquery" method="get" target="_blank">
     	<p>
     		<input type="text" name="key" id="box1"/>
-    		<input type="submit" value="传输台账查询" onclick="modifyrecord()"/>
+    		<input type="submit" value="传输台账查询" onclick="return judgeval()"/>
     	</p>  	
     </form>
-	-->
+	<!--
 	<input type="text" name="key" id="box1"/>
 	<input type="submit" value="传输台账查询" onclick="judgeval()"/>
 	<input type="submit" value="传输台账查询" onclick="modifyrecord()"/>
+	-->
 	<p>最近10个查询记录：</p>
 	<ul id="top10record">
 	</ul>
@@ -86,3 +87,4 @@
 	<p><a href="/list_fields" target="_blank">查询列管理</a></p>
 </body>
 </html>
+

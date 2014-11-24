@@ -39,9 +39,11 @@ class oledb():
         DSN = r'PROVIDER=Microsoft.Ace.OLEDB.12.0;DATA SOURCE=%s;' % db_path
         self.conn_accessdb = win32com.client.Dispatch(r'ADODB.Connection')
         self.comm_accessdb = win32com.client.Dispatch(r'ADODB.Command')
+        self.conn_accessdb.ConnectionTimeout = 5    #？
         self.conn_accessdb.Open(DSN)
+        self.comm_accessdb.CommandTimeout = 8   #?
         self.comm_accessdb.ActiveConnection = self.conn_accessdb
-        self.comm_accessdb.CommandType = self.adCmdText
+        self.comm_accessdb.CommandType = self.adCmdText        
     
     @classmethod
     def connect_excel(self, excel_path):
@@ -70,7 +72,7 @@ class oledb():
     def execute_sql(self, comm, sql):
         #print u'执行SQL命令:%s' % sql
         comm.CommandText = sql
-        #pdb.set_trace()
+        pdb.set_trace()
         try:           
             rs = comm.Execute()
 

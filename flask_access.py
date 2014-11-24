@@ -29,7 +29,7 @@ def entry():
 
 @app.route('/tzquery')
 def tzquery():
-    searchword = request.args.get('key', '')
+    searchword = request.args.get('key', '').strip()
     #pdb.set_trace()
     rs_generator = g.db.search(searchword)    #返回的是一个迭代器，调用next()来获取数据
     #pdb.set_trace()
