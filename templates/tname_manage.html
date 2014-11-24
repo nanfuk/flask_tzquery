@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="Generator" content="EditPlus®">
+  <meta name="Author" content="">
+  <meta name="Keywords" content="">
+  <meta name="Description" content="">
+  <script src="/static/jquery-2.1.1.min.js"></script>
+  <script src="/static/json2.js"></script>
+  <script type="text/javascript">
+  function createJson(){
+  //alert("你好");
+  //var obj = jQuery.parseJSON('{"name":"John"}');
+  var data=[]
+  $("tr.line").each(function(){	//过滤,class为"line"的tr标签
+	  var id=$(this).attr("id");
+	  //var old_table_name=$(this).children().eq(0).text()
+	  //var new_table_name=$(this).find("input").attr("value"); //这样是获取value属性，更改文本框内容也不会变的，得使用下句
+	  var new_table_name=$(this).find("input").val();
+	  //alert(new_table_name);
+	  data.push({"id":id, "new_table_name":new_table_name});	  
+  });
+  var json_data=JSON.stringify(data);
+  //var test = JSON.stringify([{"id":"1","new":"3G电路"}])
+  //alert(test);
+  //alert(obj.name);
+  //alert(jsonObject.toString());
+  //return json_data;
+  $.post("/tname_manage", json_data, alert("修改成功！"))
+  }
+  </script>
+
+ <title>表名管理</title>
+ </head>
+ <body>
+	<table border="1">
+		<tr>
+			<th>旧表名</th>
+			<th>新表名</th>
+			<th>文件名</th>
+		</tr>
+		{% for x in data %}
+		<tr class="line" id={{x['id']}}>
+			<td>{{x['old_table_name']}}</td>
+			<td><input type="text" value={{x['new_table_name']}} name="new_tname" /></td>
+			<td>{{x['filename']}}</td>
+		{% endfor %}
+		</tr>
+	</table>
+	<button onclick="createJson()">点击</button>
+	<form action="/tname_manage" method="post">
+		
+		<input type="submit" value="更改" onclick="createJson()" />
+	</form>
+ </body>
+</html>

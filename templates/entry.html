@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>传输台账查询</title>
+<meta name="description" content="">
+<meta name="keywords" content="">
+<link href="" rel="stylesheet">
+<script src="/static/jquery-2.1.1.min.js"></script>
+<script src="/static/jquery.cookie.js"></script>
+<script>
+	$(document).ready(function(){
+		if ($.cookie("searchrecord")==null)	
+		{
+			$.cookie("searchrecord","",{path:"/",expires:7});
+		}
+		//else{$.cookie("searchrecord",null,{path:"/",expires:7});}}); //清空cookie值
+		else{modifyrecord($.cookie("searchrecord"))}});
+		
+	function judgeval(){
+		var searchrecord = $.cookie("searchrecord");
+		inputval = $.trim($("input#box1").val());
+		$("input#box1").val("") //更改input框内容
+		if (inputval=="")
+		{
+			alert("输入不能为空！");
+		}
+		else{
+		searchrecord = searchrecord+"||"+inputval;
+		modifyrecord(searchrecord);
+		$.get("/tzquery", {key:inputval});}
+		}
+
+	function modifyrecord(searchrecord){
+		
+		//var searchrecord = $.cookie("searchrecord");
+		//searchrecord = searchrecord+"||"+$("input#box1").val();
+		//$.cookie("searchrecord",searchrecord,{path:"/",expires:7});
+		//var searchrecord = $.cookie("searchrecord");
+
+		var rslist = searchrecord.split('||');
+		var html = "";
+		var forlength = 0;
+		var stringcookie;
+		for (var i=rslist.length-1; i>= 0; i--)
+		{
+			var textval=rslist[i];
+			if ($.trim(textval)!=""&&$.trim(textval)!="null"&&$.trim(textval)!="undefined")
+			{
+				if (forlength>=10)
+				{
+					$.cookie("searchrecord",stringcookie,{expires:7});
+					break;
+				}
+				else
+				{
+					html += "<li class='lis'><a href=/tzquery?key="+textval+" target='_blank'>"+textval+"</a></li></br>";
+					forlength += 1;
+					stringcookie=textval+"||"+stringcookie;
+				}
+			}
+		}
+		$.cookie("searchrecord",stringcookie,{expires:7});		
+		//document.getElementById('top10record').innerHTML=html;//这句等效于下句
+		$("#top10record").html(html);		
+	}
+</script>
+</head>
+<body>
+	<!--
+    <form action="/tzquery" method="get" target="_blank">
+    	<p>
+    		<input type="text" name="key" id="box1"/>
+    		<input type="submit" value="传输台账查询" onclick="modifyrecord()"/>
+    	</p>  	
+    </form>
+	-->
+	<input type="text" name="key" id="box1"/>
+	<input type="submit" value="传输台账查询" onclick="judgeval()"/>
+	<input type="submit" value="传输台账查询" onclick="modifyrecord()"/>
+	<p>最近10个查询记录：</p>
+	<ul id="top10record">
+	</ul>
+	<p><a href="/tname_manage" target="_blank">表名更改</a></p>
+	<p><a href="/list_fields" target="_blank">查询列管理</a></p>
+</body>
+</html>
