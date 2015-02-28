@@ -7,10 +7,12 @@
 import win32com.client
 import os
 import time
+import datetime
 import re
 import json
 import pythoncom
 import pdb
+from Queue import Queue
 from os.path import splitext
 
 class oledb():
@@ -20,33 +22,42 @@ class oledb():
 
     acImport =  0     #表示导入数据
     acSpreadsheetTypeExcel9 = 8       #Microsoft Excel 2000 格式
-    
-    def __init__(self):
-        
+    mes = Queue()
+
+    db_path = os.path.join(os.path.dirname(__file__),'base_db.accdb')
+
+    def __init__(self, databaseFile, excelDir):
+        self.databaseFile = databaseFile
+        self.excelDir = excelDir
         pass
 
     @classmethod
     def init_conn(self):
-        print u'正在初始化'
+        #print u'正在初始化'
+        self.mes.put(u'正在初始化~\n')
         self.file_path = r'C:\传输值班台账汇总'.decode('utf8')
-        self.db_path = r'C:\Users\John\Desktop\execel与access\base_db.accdb'.decode('utf8')
+        self.db_path = os.path.join(os.path.dirname(__file__),'base_db.accdb')
         self.access_path = r'C:\Users\John\Desktop\execel与access\base_db.accdb'.decode('utf8')
         self.pattern = re.compile(r'.*[\$|\$\']$')   #正则表示匹配以$及$'结尾的字符串,初步优化得到的excel表名
         #self.file1 = open(r'C:\Users\John\Desktop\execel与access\debug.txt'.decode('utf8'), 'w')
         
     @classmethod
     def connect_accessdb(self, db_path):
+        self.mes.put(u'连接Access数据库.\n\n')
         DSN = r'PROVIDER=Microsoft.Ace.OLEDB.12.0;DATA SOURCE=%s;' % db_path
-        self.conn_accessdb = win32com.client.Dispatch(r'ADODB.Connection')
-        self.comm_accessdb = win32com.client.Dispatch(r'ADODB.Command')
-        self.conn_accessdb.ConnectionTimeout = 5    #？
-        self.conn_accessdb.Open(DSN)
-        self.comm_accessdb.CommandTimeout = 8   #?
-        self.comm_accessdb.ActiveConnection = self.conn_accessdb
-        self.comm_accessdb.CommandType = self.adCmdText        
+        #self.AceConn = win32com.client.Dispatch(r'ADODB.Connection')
+        AceConn = win32com.client.Dispatch(r'ADODB.Connection')
+        #self.comm_accessdb = win32com.client.Dispatch(r'ADODB.Command')
+        AceConn.Open(DSN)
+        #self.comm_accessdb.CommandTimeout = 8   #?
+        #self.comm_accessdb.ActiveConnection = self.AceConn
+        #self.comm_accessdb.CommandType = self.adCmdText
+        return AceConn
+
     
     @classmethod
     def connect_excel(self, excel_path):
+        #self.mes.put(u'连接Access数据库.')
         DSN = r"PROVIDER=Microsoft.Ace.OLEDB.12.0;DATA SOURCE=%s;Extended Properties='Excel 12.0;HDR=YES;IMEX=1'" % excel_path
         #Excel2007必须使用Microsoft.Ace.OLEDB.12.0;#HDR表示首行作为列名
         #IMEX=1 时为“汇入模式”，这个模式开启的 Excel 档案只能用来做“读取”用途
@@ -69,13 +80,13 @@ class oledb():
             print e[2][2]
 
     @classmethod    
-    def execute_sql(self, comm, sql):
+    def CommandExecute(self, comm, sql):
         #print u'执行SQL命令:%s' % sql
         comm.CommandText = sql
-        pdb.set_trace()
+        #pdb.set_trace()
         try:           
             rs = comm.Execute()
-
+            
         except Exception,e:
             print u'执行SQL命令:%s 出错：' % sql
             try:
@@ -84,102 +95,40 @@ class oledb():
                 print e
             return None
         if isinstance(rs, tuple):    #判断是否是tuple类型
-            return rs[0]
+            rs = rs[0]
+            return rs
         else:
             return None
-
+        
     @classmethod
-    def del_all_tables(self):        #删除t1,t2管理表
-        a = self.conn_accessdb.OpenSchema(self.adSchemaTables)
-        while not a.EOF:
-            if str(a("TABLE_TYPE"))=="TABLE":
-                tableName = str(a("TABLE_NAME")).decode('utf8')
-                sql = u"drop table [%s];" % tableName
-                print u'正在删除[%s]表' % tableName
-                self.execute_sql(self.comm_accessdb, sql)
-            a.MoveNext()
-        """
-        sql = u"drop table [t1];"
-        self.execute_sql(self.comm_accessdb, sql)
-        sql = u"drop table [t2];"
-        self.execute_sql(self.comm_accessdb, sql)
-        """
-    @classmethod
-    def create_manage_table(self):    #创建t1,t2管理表
-        print u'正在创建新表'
-        #self.connect_accessdb(self.db_path)
-        sql = u"create table tables_table (序号 int identity(1,1), 旧表名 varchar(100), 新表名 varchar(200), 所属文件 varchar(150), 字段连接 text);"
-        self.execute_sql(self.comm_accessdb, sql)
-        sql = u"create table fields_table (序号 int identity(1,1), 列名 varchar(100), 类型 int, 是否查询 bit, 所属表 varchar(100));"
-        self.execute_sql(self.comm_accessdb, sql)
-
-    @classmethod
-    def write_tables_table(self):
-        for filename in os.listdir(self.file_path):
-            pathname = os.path.join(self.file_path, filename)
-            self.connect_excel(pathname)
-            print u'\n正在获取%s的表名。' % filename
-            a = self.conn_excel.OpenSchema(self.adSchemaTables)
-            #20代表adSchemaTables
-             
-            while not a.EOF:
-                if str(a("TABLE_TYPE"))=="TABLE":
-                    #必须加str()进行类型转换，原本是<'type' instance>
-                    #有"TABLE" "SYSTEM TABLE" "ACCESS TABLE"三种类型
-                    tableName = str(a("TABLE_NAME")).decode('utf8')
-                    filename = splitext(filename)[0]
-                    
-
-                    match = self.pattern.search(tableName)
-                    if match:   #如果匹配到，则match不为None
-                        newtableName = filename+"___"+tableName.strip("'$")
-                        sql = u'insert into tables_table(旧表名, 新表名, 所属文件) values("%s", "%s", "%s")'% (tableName, newtableName, filename)#这里使用双引号，是为了防止值带单引号时出错。
-                        self.execute_sql(self.comm_accessdb, sql)
-
-                        #self.write_fields_table(self, tableName, newtableName)  #填充fields_table，步骤错误，这样导入的话会把F27~F255的列都导入
-                        """待添加:填充tables_table的连接字段，参考step5"""
-                a.MoveNext()
-            a.Close()
-            self.conn_excel.Close()
-
-    @staticmethod
-    def write_fields_table(self, table_name, newtableName):
-        a = self.conn_excel.OpenSchema(self.adSchemaColumns, [None, None, table_name])
-        while not a.EOF:
-            type = int(a("DATA_TYPE"))
-            if type==130:
-                isSearch = True
-            else:
-                isSearch = False
-            sql = u'insert into fields_table(列名, 所属表, 类型, 是否查询) values("%s","%s","%d","%d")' % (str(a("COLUMN_NAME")).decode('utf8'), newtableName, type, isSearch)
-            self.execute_sql(self.comm_accessdb, sql)
-            a.MoveNext()
-        a.Close()
+    def RsExecute(self, conn, sql):
+        CursorType = 3   #静态型，才能支持RecordCount，得出Item条数
+        rs = win32com.client.Dispatch('ADODB.RecordSet')
+        rs.Open(sql, conn, CursorType)
+        return rs
 
 class accessdb():
-    def __init__(self):
+    def __init__(self, conn):
+        self.conn = conn     #不使用oledb.conn_accessdb是为了能够多进程进行。
         pass
-
-    @staticmethod
-    def exportcursor(sql):   #调用这个函数来输出记录集，待删除！！
-        rs = oledb.execute_sql(oledb.comm_accessdb, sql)
-        if rs.eof and rs.bof:
-            return None     #记录为空
-        else:
-            return rs
 
     def del_all_tables(self):        #删除access库的所有表
         a = oledb.conn_accessdb.OpenSchema(oledb.adSchemaTables)
         while not a.EOF:
             if str(a("TABLE_TYPE"))=="TABLE":
-                tableName = str(a("TABLE_NAME")).decode('utf8')
+                #tableName = str(a("TABLE_NAME")).decode('utf8')
+                tableName = a.Fields.Item(u'TABLE_NAME').Value
                 sql = u"drop table [%s];" % tableName
-                print u'正在删除[%s]表' % tableName
+                #print u'正在删除[%s]表' % tableName
+                oledb.mes.put(u'删除[%s]表\n' % tableName)
+
                 oledb.execute_sql(oledb.comm_accessdb, sql)
             a.MoveNext()
+        oledb.mes.put(u'\n')
         
     def create_manage_table(self):    #创建tables_table,fields_table管理表
-        print u'正在创建新表'
+        #print u'正在创建新表'
+        oledb.mes.put(u'创建新表:tables_table、fields_table\n\n')
         #self.connect_accessdb(self.db_path)
         sql = u"create table tables_table (序号 int identity(1,1), 旧表名 varchar(100), 新表名 varchar(200), 所属文件 varchar(150), 字段连接 text);"
         oledb.execute_sql(oledb.comm_accessdb, sql)
@@ -194,9 +143,9 @@ class accessdb():
             rs2 = oledb.conn_accessdb.OpenSchema(oledb.adSchemaColumns, [None, None, tablename])
             link_columns_name = ""
             while not rs2.EOF:
-                type = int(rs2("DATA_TYPE"))
-                
-                column_name = str(rs2("COLUMN_NAME"))
+                type = int(rs2("DATA_TYPE"))    
+                #column_name = str(rs2("COLUMN_NAME"))
+                column_name = rs2.Fields.Item("COLUMN_NAME").Value
                 if type==130:
                     isSearch = True
                     link_columns_name += "+[%s]" % column_name
@@ -213,7 +162,8 @@ class accessdb():
         rs1.Close()
 
     def fill_null(self):
-        print u"正在填充Null格！"
+        #print u"正在填充Null格！"
+        oledb.mes.put(u"正在填充Null格……需要稍微等会~\n")
         sql1 = u'select 列名, 所属表, 类型 from fields_table'
         rs1 = oledb.execute_sql(oledb.comm_accessdb, sql1)
         while not rs1.EOF:
@@ -225,20 +175,35 @@ class accessdb():
                 sql2 = u"update [%s] set [%s]=iif(IsNull([%s]), ' ',[%s])" % (tablename, colname, colname, colname) #把所有为Null的值转为空格
                 oledb.execute_sql(oledb.comm_accessdb, sql2)
             rs1.MoveNext()
+        oledb.mes.put(u"填充完毕~\n\n")
         rs1.Close()
 
+    def getUpdatetime(self):
+        sql1 = u'select distinct 更新时间 from tables_table'
+        rs1 = oledb.RsExecute(self.conn, sql1)
+        #pdb.set_trace()
+        updatetime = rs1.Fields.Item(u'更新时间').Value
+
+        return updatetime
+        
 
 
-    def search(self, str):   #这是查询台账的关键函数
+    def search(self, strList):   #这是查询台账的关键函数
         sql1 = u'select 新表名,字段连接 from tables_table'
-        rs1 = oledb.execute_sql(oledb.comm_accessdb, sql1)
+        rs1 = oledb.RsExecute(self.conn, sql1)
+        #pdb.set_trace()
+        #rs.Fields(i).Name ###
         while not rs1.EOF:
             tablename = rs1.Fields.Item(u'新表名').Value
             addstring = rs1.Fields.Item(u'字段连接').Value
-            sql2 = u'select * from [%s] where %s like "%%%s%%"' % (tablename, addstring, str)
-            #print sql2
+            sql2 = ""
+            for str in strList:
+                sql2 += ' and (%s like "%%%s%%")' % (addstring, str)
+            sql2 = sql2.lstrip(" and")
+            sql3 = u'select * from [%s] where ' % (tablename) + sql2
+            #sql2 = u'select * from [%s] where (%s like "%%%s%%") and (%s like "%%太阳城%%")' % (tablename, addstring, str, addstring)
             #pdb.set_trace()
-            rs2 = oledb.execute_sql(oledb.comm_accessdb, sql2)
+            rs2 = oledb.RsExecute(self.conn, sql3)
             
             if rs2.EOF==False:
                 yield rs2, tablename
@@ -281,7 +246,8 @@ class accessdb():
             oledb.execute_sql(oledb.comm_accessdb, sql)
 
     def close(self):
-        oledb.conn_accessdb.Close()
+        oledb.mes.put(u"关闭AccessDB~\n\n")
+        self.conn.Close()
 
 class exceldb():
     def __init__(self, excel_dir):
@@ -292,16 +258,23 @@ class exceldb():
     def write_tables_table(self):
         for filename in os.listdir(self.excel_dir):
             pathname = os.path.join(self.excel_dir, filename)
+
+            timestamp = os.path.getmtime(pathname)   #是时间戳
+            date = datetime.datetime.fromtimestamp(timestamp) 
+
             oledb.connect_excel(pathname)
-            print u'\n正在获取%s的表名。' % filename
-            a = oledb.conn_excel.OpenSchema(oledb.adSchemaTables)
-            #20代表adSchemaTables
-             
+            #print u'\n正在获取%s的表名。' % filename
+            oledb.mes.put(u'获取%s的表名。\n' % filename)
+            oledb.mes.put(u"该文档的最近更新时间:%s\n\n" % date.strftime('%Y-%m-%d %H:%M:%S'))
+            
+            a = oledb.conn_excel.OpenSchema(oledb.adSchemaTables)  #20代表adSchemaTables
+
             while not a.EOF:
                 if str(a("TABLE_TYPE"))=="TABLE":
                     #必须加str()进行类型转换，原本是<'type' instance>
                     #有"TABLE" "SYSTEM TABLE" "ACCESS TABLE"三种类型
-                    tableName = str(a("TABLE_NAME")).decode('utf8')
+                    #tableName = str(a("TABLE_NAME")).decode('utf8')
+                    tableName = a.Fields.Item(u'TABLE_NAME').Value
                     #filename = splitext(filename)[0]
                     
 
@@ -316,6 +289,7 @@ class exceldb():
                 a.MoveNext()
             a.Close()
             oledb.conn_excel.Close()
+        oledb.mes.put(u'\n')
 
 class accessapp():
     def __init__(self, excel_dir):
@@ -332,39 +306,77 @@ class accessapp():
             filename = rs.Fields.Item(u"所属文件").Value
             filename = os.path.join(self.excel_dir,filename)
             #pdb.set_trace()
-            print u'正在导入%s的%s表' % (filename, excel_table)
+            #print u'正在导入%s的%s表' % (filename, excel_table)
+            oledb.mes.put(u'导入%s的%s表\n' % (filename, excel_table))
             
             oledb.accessApplication.DoCmd.TransferSpreadsheet(oledb.acImport, oledb.acSpreadsheetTypeExcel9, 
                             access_table, filename, True, excel_table)
-
-
-            print '\n'
             rs.MoveNext()
+        oledb.mes.put(u'\n')
 
+        oledb.mes.put(u'关闭AccessApplication连接~\n\n')
+        oledb.accessApplication.CloseCurrentDatabase()
 
-def connect_accessdb(db_path = os.path.join(os.path.dirname(__file__), "base_db.accdb")):   #因为只有本文件才能引用oledb类的静态及类方法，所以外部文件只能通过函数来引用该类的类方法了
+    def compressDB(self):
+        oledb.mes.put(u'压缩数据库……\n')
+
+        basePath = os.path.dirname(oledb.databaseFile)
+        tmpFile = os.path.join(basePath, "tmp.accdb")
+
+        if os.path.exists(tmpFile):
+            os.remove(tmpFile)
+        
+        #这是压缩的主方法~
+        oledb.accessApplication.CompactRepair(LogFile=False, SourceFile=oledb.databaseFile, DestinationFile=tmpFile)
+        #oledb.accessApplication.DoCmd.RunCommand(4)
+        os.remove(oledb.databaseFile)
+        os.rename(tmpFile, oledb.databaseFile)
+        oledb.mes.put(u'压缩完成！\n\n')
+
+    def close(self):
+        oledb.mes.put(u"关闭AccessApp!\n")
+        oledb.accessApplication.Quit()
+
+def connect_accessdb(databaseFile=oledb.db_path):   #因为只有本文件才能引用oledb类的静态及类方法，所以外部文件只能通过函数来引用该类的类方法了
     pythoncom.CoInitialize()    #在子进程中应用win32com,得调用这个函数
     
-    #db_path = r'C:\Users\devilman\Desktop\execel与access\base_db.accdb'.decode('utf8')
-    oledb.connect_accessdb(db_path)
-    return accessdb()
+    conn = oledb.connect_accessdb(databaseFile)
+    return accessdb(conn)
 
-def connect_exceldb(excel_dir = r'C:\传输值班台账汇总'.decode('utf8')):
+def connect_exceldb(excelDir):
     pythoncom.CoInitialize()
-    return exceldb(excel_dir)
+    return exceldb(excelDir)
     pass
 
-def connect_accessapp(access_path = r'C:\flask_env\project\base_db.accdb'.decode('utf8')):
+def connect_accessapp(accessAppFile):
     pythoncom.CoInitialize()
-    #pdb.set_trace()
 
-    #oledb.conn_accessdb.Close()
-    #oledb.comm_accessdb.Close()
-    #oledb.conn_accessdb = None
-    oledb.connect_accessapp(access_path)
-    excel_dir = r'C:\传输值班台账汇总'.decode('utf8')
-    return accessapp(excel_dir)
+    oledb.connect_accessapp(accessAppFile)
+    return accessapp(oledb.excelDir)
 
+def run(excelDir, databaseFile):   #供外部调用
+    oledb.databaseFile = databaseFile    #把赋值给oledb的静态属性，供全局使用
+    oledb.excelDir = excelDir
+
+    accessdb = connect_accessdb(oledb.databaseFile)
+    exceldb = connect_exceldb(oledb.excelDir)  
+    accessapp = connect_accessapp(oledb.databaseFile)
+    
+    accessdb.del_all_tables()
+    accessdb.create_manage_table()
+    exceldb.write_tables_table()
+       
+    accessapp.import_data()
+    
+    accessdb.write_fields_table()   
+    accessdb.fill_null()
+    accessdb.close()
+
+    accessapp.compressDB()  #压缩数据库！
+    
+    
+def getMesQueue():    #得出全局的mes队列：oledb.mes
+    return oledb.mes
 
 if __name__ == "__main__":
     time1 = time.time()
@@ -385,6 +397,8 @@ if __name__ == "__main__":
     accessdb.write_fields_table()
     
     accessdb.fill_null()
+
+    accessapp.compressDB()
 
     time2 = time.time()
     print u'用时:%ds' % int(time2-time1)
