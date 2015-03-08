@@ -81,7 +81,7 @@ def export_xls():
     wb.encodeing = "gbk"
     
     lt = time.localtime()
-    ISOTIMEFORMAT = '%X'
+    ISOTIMEFORMAT = '%H_%M_%S'
     ft = time.strftime(ISOTIMEFORMAT, lt)
 
     for rs,tablename in rs_generator:        

@@ -15,10 +15,13 @@
 </style>
 <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-table.min.css">
-<script type="text/javascript" src="/static/js/jquery-2.1.1.min.js"></script>
+<script type="text/javascript" src="jquery-2.1.1.min.js"></script>
 <script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/static/js/bootstrap-table.min.js"></script>
+
 <script type="text/javascript">
-$(document).ready(function(){
+	$(document).ready(function(){
+	alert("测试");
 	$("#export_xls").click(function(){
 		var searchword = "{{searchword}}";
 		alert("测试");
@@ -36,6 +39,7 @@ $(document).ready(function(){
 
 	});
 </script>
+
 </head>
 
 <body>
@@ -60,7 +64,16 @@ $(document).ready(function(){
 
 {% for i in range(keys) %}
 <script type="text/javascript">
+/*
+	function str2unicode(str){
+		var arr = new Array()
+		for(var i=0;i<str.length;i++){
+			arr[i]="0x"+str.charCodeAt(i).toString(16);			//charCodeAt()返回的是整数，不是16进制数
+		}
+		return(arr.toString().replace(/,/g,""));
+	}*/
 	var ym=document.getElementsByTagName('body')[0].innerHTML;
+	//var searchword = str2unicode("searchword");
 	var searchword = "{{keyList[i]}}".replace(/\\/g,"\\\\")
 	searchword = searchword.replace(/\(/g,"\\(")
 	searchword = searchword.replace(/\)/g,"\\)")
