@@ -98,15 +98,20 @@ def export_xls():
             ws.write(row,col,field.name)
             col += 1
         col = 0
+        #style = xlwt.XFStyle()
+        #style.num_format_str = "D-MMM-YY"
+
         while not rs.EOF:
             for field in rs.Fields:
-                ws.write(row+1,col,rs.Fields.Item(field.name).Value)
+                try:
+                    ws.write(row+1,col,rs.Fields.Item(field.name).Value)
+                except: #解决xlwt无法写入type<'time'>的问题，把时钟类型强制转为字符串类型
+                    ws.write(row+1,col,str(rs.Fields.Item(field.name).Value))
                 col += 1
             rs.MoveNext()
             col = 0
             row += 1
-    #ws = wb.add_sheet("1")
-    #ws.write(0,1,u"测试")
+
     sio = StringIO.StringIO()
     wb.save(sio)        #这点很重要，传给save函数的不是保存文件名，而是一个StringIO流
 
