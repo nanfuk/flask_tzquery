@@ -78,18 +78,21 @@ def export_xls():
     rs_generator = g.db.search(keyList)
 
     wb = xlwt.Workbook()
-    wb.encodeing = "gbk"
+    wb.encoding = "gbk"
     
     lt = time.localtime()
     ISOTIMEFORMAT = '%H_%M_%S'
     ft = time.strftime(ISOTIMEFORMAT, lt)
 
-    for rs,tablename in rs_generator:        
-        #counts=rs.RecordCount
-        #pdb.set_trace()
+    pattern = re.compile(r".*___")
+
+    for rs,tablename in rs_generator: 
         row = 0
         col = 0
         #pdb.set_trace()
+        if len(tablename) > 31:
+            tablename = pattern.sub("", tablename)  #excel支持的最大长度表名是31字节。替换掉文件名___来缩减长度。
+
         ws = wb.add_sheet(tablename)
         for field in rs.Fields:
             ws.write(row,col,field.name)
@@ -116,10 +119,6 @@ def export_xls():
     return resp
     #xlsBook.Close(False)
     #xlsApp.Quit()
-
-@main_blueprint.route('/dbupdate')
-def dbupdate(): #更新数据库指南
-    return render_template("db_update.html")
 
 @main_blueprint.route('/list_fields')
 def listFields():
