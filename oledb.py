@@ -185,14 +185,17 @@ class accessdb():
         updatetime = rs1.Fields.Item(u'更新时间').Value
 
         return updatetime
-        
 
 
-    def search(self, strList):   #这是查询台账的关键函数
-        sql1 = u'select 新表名,字段连接 from tables_table'
+    def search(self, strList, area):   #这是查询台账的关键函数
+        if area == u"传输值班台账":
+            area = u"(\"其它\",\"波分台账\")"
+        else:
+            area = u"(\"%s\")" % area
+        sql1 = u'select 新表名,字段连接 from tables_table left join files_table on \
+                tables_table.所属文件=files_table.文件名 where 分类 in %s' % area
         rs1 = oledb.RsExecute(self.conn, sql1)
-        #pdb.set_trace()
-        #rs.Fields(i).Name ###
+
         while not rs1.EOF:
             tablename = rs1.Fields.Item(u'新表名').Value
             addstring = rs1.Fields.Item(u'字段连接').Value

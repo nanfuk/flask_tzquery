@@ -21,7 +21,7 @@ def preKey(str):      #对关键字进行预处理
     pattern = re.compile(r"\[")   #①r表示字符串的'\'不需转义。②但'['不能直接compile，需要'\'转义才能compile
     str = pattern.sub("%[", str)
 
-    return str.split('*')
+    return str.split('*')   #返回的是一个列表
 
 @main_blueprint.before_request      #表示在请求页面之前先连接好数据库
 def before_request():
@@ -47,8 +47,13 @@ def tzquery():
     time1 = time.time()
     searchword = request.args.get('key', '')
 
+    area = request.args.get("area", "")
+
+    if area == "":
+        return(u"主页已更新，请刷新主页！")
+
     keyList = preKey(searchword)
-    rs_generator = g.db.search(keyList)    #返回的是一个迭代器，调用next()来获取数据
+    rs_generator = g.db.search(keyList, area)    #返回的是一个迭代器，调用next()来获取数据
 
     sum = 0
     entries = []
@@ -67,7 +72,7 @@ def tzquery():
     else:
         pattern = re.compile(r"\\")   #这个正则是给模板用的。
         searchword = pattern.sub(r"\\\\",searchword)
-        return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword)
+        return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
         #keys为关键字数目，因为在模板中无法使用len方法
 
 @main_blueprint.route('/export')
@@ -75,7 +80,9 @@ def export_xls():
     searchword = request.args.get('key', '')
     keyList = preKey(searchword)
     #pdb.set_trace()
-    rs_generator = g.db.search(keyList)
+    area = request.args.get("area", "") 
+
+    rs_generator = g.db.search(keyList, area)
 
     wb = xlwt.Workbook()
     wb.encoding = "gbk"

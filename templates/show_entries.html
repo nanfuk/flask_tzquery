@@ -32,7 +32,8 @@ $(document).ready(function(){
 		    });
 	});
 	var searchword = "{{searchword}}";
-	$("#export_xls2").attr("href","/export?key="+encodeURIComponent(searchword));
+	var area = "{{area}}"
+	$("#export_xls2").attr("href","/export?key="+encodeURIComponent(searchword)+"&area="+encodeURIComponent(area));
 
 	});
 </script>
