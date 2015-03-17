@@ -9,6 +9,7 @@ import re
 import excel
 import StringIO
 import xlwt
+from urllib import unquote   #实现url解码
 
 
 main_blueprint = Blueprint("main_blueprint", __name__)
@@ -26,7 +27,10 @@ def preKey(str):      #对关键字进行预处理
 @main_blueprint.before_request      #表示在请求页面之前先连接好数据库
 def before_request():
     g.db = connect_accessdb() #返回的是一个类实例
-    print u"开始时间:%d" % int(time.time())
+    lt = time.localtime()
+    time_format = "%Y-%m-%d %H:%M:%S"
+    st = time.strftime(time_format, lt)
+    print u"开始时间:%s" % st
 
 @main_blueprint.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
 def teardown_request(exception):
@@ -44,6 +48,9 @@ def entry():
 def tzquery():
     #before_request()
     #pdb.set_trace()
+    if request.remote_addr == "10.117.194.222":
+        return(u"-_-!!")
+
     time1 = time.time()
     searchword = request.args.get('key', '')
 
@@ -63,7 +70,9 @@ def tzquery():
         entries.append(dict(rs=rs,tablename=tablename,counts=counts))
         sum += counts
     time2 = time.time()
-    print time2-time1
+    print u"area:%s" % area
+    print u"keyword:%s" % searchword
+    print u"查询时间:%.2f秒" % (time2-time1)
 
     if sum==0:
         return render_template("not_found.html")
