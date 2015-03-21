@@ -1,7 +1,7 @@
 #-*-coding:utf8-*-
 import win32com.client
 from oledb import connect_accessdb
-from flask import Flask, g, render_template, request, make_response, Blueprint
+from flask import Flask, g, render_template, request, make_response, Blueprint, session
 import pdb
 import json
 import time
@@ -36,28 +36,24 @@ def before_request():
 def teardown_request(exception):
     db = getattr(g, 'db', None)
     if db is not None:
-        print u"关闭数据库"
         db.close()
 
 @main_blueprint.route('/')
 def entry():
     updatetime = g.db.getUpdatetime()
+    session["time"] = None
     return render_template("entry.html",updatetime=updatetime)
 
 @main_blueprint.route('/tzquery')
 def tzquery():
-    #before_request()
     #pdb.set_trace()
-    if request.remote_addr == "10.117.194.222":
+    if request.remote_addr == "10.117.194.222": #黑名单
         return(u"-_-!!")
 
-    time1 = time.time()
-    searchword = request.args.get('key', '')
+    time1 = time.time() #东圃被北路搬迁 旅店
 
-    area = request.args.get("area", "")
-
-    if area == "":
-        return(u"主页已更新，请刷新主页！")
+    searchword = request.args.get('key', '')    #根据网页的设置编码来得出的是Unicode编码
+    area = request.args.get('area', '')
 
     keyList = preKey(searchword)
     rs_generator = g.db.search(keyList, area)    #返回的是一个迭代器，调用next()来获取数据
@@ -70,13 +66,12 @@ def tzquery():
         entries.append(dict(rs=rs,tablename=tablename,counts=counts))
         sum += counts
     time2 = time.time()
-    print u"area:%s" % area
-    print u"keyword:%s" % searchword
+    print u"%s-->%s" % (searchword, area)
     print u"查询时间:%.2f秒" % (time2-time1)
 
     if sum==0:
         return render_template("not_found.html")
-    elif sum>400:
+    elif sum>500:
         return render_template("too_many.html",sum=sum)
     else:
         pattern = re.compile(r"\\")   #这个正则是给模板用的。

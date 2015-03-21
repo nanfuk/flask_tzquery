@@ -6,6 +6,7 @@ from main.main_blueprint import main_blueprint
 
 
 app = Flask(__name__)   #表示flask在什么位置搜索所需的static与template...
+app.secret_key = "you_guess_it"
 app.register_blueprint(main_blueprint)
 
 @app.route('/dbupdate')
