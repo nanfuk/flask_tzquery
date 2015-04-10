@@ -54,6 +54,10 @@ def tzquery():
 
     searchword = request.args.get('key', '')    #根据网页的设置编码来得出的是Unicode编码
     area = request.args.get('area', '')
+    version = request.args.get("version", '')
+
+    if version!="1.0":
+        return(u"主页已更新，请刷新主页。")
 
     keyList = preKey(searchword)
     rs_generator = g.db.search(keyList, area)    #返回的是一个迭代器，调用next()来获取数据

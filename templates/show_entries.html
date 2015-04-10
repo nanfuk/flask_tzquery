@@ -47,12 +47,12 @@ $(document).ready(function(){
 			
     		<table border="2" class="table table-striped table-bordered table-hover table-condensed" data-toggle="table">
     			<tr> 			
-	    		{% for i in range(entry.rs.Fields.Count-1) %}
+	    		{% for i in range(entry.rs.Fields.Count) %}
 					<th>{{entry.rs.Fields(i).Name}}</th>
 				{% endfor %}				
 				</tr>
 				<tr><td>
-				{{ (entry.rs.GetString( StringFormat=2, NumRows=-1, ColumnDelimeter='</td><td>', RowDelimeter='</td></tr><tr><td>', NullExpr='')[:-23]+'</tr>')|safe }}
+				{{ (entry.rs.GetString( StringFormat=2, NumRows=-1, ColumnDelimeter='</td><td>', RowDelimeter='</td></tr><tr><td>', NullExpr='')[:-18]+'</tr>')|safe }}
 			</table>
 		</li>	
     {% endfor %}

@@ -188,12 +188,16 @@ class accessdb():
 
 
     def search(self, strList, area):   #这是查询台账的关键函数
-        if area == u"传输值班台账":
+        if area == "01":
             area = u"(\"其它\",\"波分台账\")"
-        else:
-            area = u"(\"%s\")" % area
+        elif area == "02":
+            area = u"(\"集团客户评价表\")"
+        elif area == "03":
+            area = u"(\"波分台账\")"
+        elif area == "04":
+            area = u"(\"其它\")"
         sql1 = u'select 新表名,字段连接 from tables_table left join files_table on \
-                tables_table.所属文件=files_table.文件名 where 分类 in %s' % area
+                tables_table.所属文件=files_table.文件名 where 分类 in %s order by 序号' % area
         rs1 = oledb.RsExecute(self.conn, sql1)
 
         while not rs1.EOF:
