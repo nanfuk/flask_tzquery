@@ -1,7 +1,7 @@
 #-*-coding:utf8-*-
 import win32com.client
 from oledb import connect_accessdb
-from flask import Flask, g, render_template, request, make_response, Blueprint, session
+from flask import Flask, g, render_template, request, make_response, Blueprint, session, redirect, url_for, session, current_app
 import pdb
 import json
 import time
@@ -10,6 +10,7 @@ import excel
 import StringIO
 import xlwt
 from urllib import unquote   #实现url解码
+#from flask_access import sess_interface, app
 
 
 main_blueprint = Blueprint("main_blueprint", __name__)
@@ -41,16 +42,28 @@ def teardown_request(exception):
 @main_blueprint.route('/')
 def entry():
     updatetime = g.db.getUpdatetime()
-    session["time"] = None
+    #session["time"] = "test"
     return render_template("entry.html",updatetime=updatetime)
 
 @main_blueprint.route('/tzquery')
 def tzquery():
+    #import pdb
     #pdb.set_trace()
-    if request.remote_addr == "10.117.194.222": #黑名单
-        return(u"-_-!!")
+    #print session["time"]
+    #lt = time.localtime()
+    #time_format = "%Y-%m-%d %H:%M:%S"
+    #st = time.strftime(time_format, lt)
+    #current_time = time.time()
+    if current_app.session_interface.judge_attack(current_app, request):
+        return u"访问太频繁！"
 
-    time1 = time.time() #东圃被北路搬迁 旅店
+    time1 = time.time()
+    session["time"] = time1
+
+    current_app.session_interface.save_session_without_response(current_app, session)
+    
+    #if request.remote_addr == "10.117.194.222": #黑名单
+    #    return(u"-_-!!")
 
     searchword = request.args.get('key', '')    #根据网页的设置编码来得出的是Unicode编码
     area = request.args.get('area', '')
@@ -82,6 +95,7 @@ def tzquery():
         searchword = pattern.sub(r"\\\\",searchword)
         return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
         #keys为关键字数目，因为在模板中无法使用len方法
+
 
 @main_blueprint.route('/export')
 def export_xls():
