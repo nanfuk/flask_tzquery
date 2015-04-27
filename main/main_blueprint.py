@@ -54,10 +54,12 @@ def tzquery():
     #time_format = "%Y-%m-%d %H:%M:%S"
     #st = time.strftime(time_format, lt)
     #current_time = time.time()
-    if current_app.session_interface.judge_attack(current_app, request):
-        return u"访问太频繁！"
-
     time1 = time.time()
+    if current_app.session_interface.judge_attack(current_app, request):
+        session["time"] = time1
+        current_app.session_interface.save_session_without_response(current_app, session)
+        return u"访问太频繁！3秒后再查询~.~"
+
     session["time"] = time1
 
     current_app.session_interface.save_session_without_response(current_app, session)
