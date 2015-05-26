@@ -179,7 +179,7 @@ class accessdb():
         rs1.Close()
 
     def getUpdatetime(self):
-        sql1 = u'select distinct 更新时间 from tables_table'
+        sql1 = u'select distinct 更新时间 from tables_table order by 更新时间 DESC'
         rs1 = oledb.RsExecute(self.conn, sql1)
         #pdb.set_trace()
         updatetime = rs1.Fields.Item(u'更新时间').Value
