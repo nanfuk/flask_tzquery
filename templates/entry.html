@@ -7,9 +7,33 @@
 <meta name="description" content="">
 <meta name="keywords" content="">
 <link rel="stylesheet" type="text/css" href="static/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="static/easyui/themes/default/easyui.css">
+<link rel="stylesheet" type="text/css" href="static/easyui/themes/icon.css">
 <script type="text/javascript" src="static/js/jquery-2.1.1.min.js"></script>
 <script type="text/javascript" src="static/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="static/easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="static/easyui/datagrid-filter.js"></script>
 <script src="static/js/jquery.cookie.js"></script>
+<script type="text/javascript">
+	$(function(){
+		//$("#client").panel();
+		//$("#client").panel("move",{left:300,top:400});
+		var dg = $("#client-210").datagrid({
+			singleSelect:true,
+			url:"client_names",
+			method:"get",
+			collapsible:true, //可折叠
+			closable:true,	//可关闭，继承panel面板属性
+			nowrap:false,
+		});
+		dg.datagrid('enableFilter',[{
+			field:"itemid",
+			type:"numberbox",
+			op:['equal','notequal','less','greater']
+		}]);
+	});
+
+</script>
 </head>
 <body>
 
@@ -32,8 +56,20 @@
       			</span>
     		</div><!-- /input-group -->
 		</div><!-- /form-group -->
-		<input type="hidden" value="1.0" name="version"/><!--版本号，方便更新-->
+		<input type="hidden" value="2.0" name="version"/><!--版本号，方便更新-->
 	</form>
+</div>
+
+<div id="client" style="position:absolute;padding:5px;left:600px;top:20px">
+	<table id="client-210" title="210家总部直管客户名单" style="width:500px;height:350px">
+		<thead>
+			<tr>
+				<th data-options="field:'itemid',width:60">序号</th>
+				<th data-options="field:'client-name',width:200">直管客户名单(49家)</th>
+				<th data-options="field:'customer-manager',width:200">大客户营销服务中心客户经理</th>
+			</tr>
+		</thead>
+	</table>
 </div>
 
 <div style="padding: 10px 20px 10px;">

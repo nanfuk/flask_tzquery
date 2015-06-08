@@ -71,7 +71,7 @@ def tzquery():
     area = request.args.get('area', '')
     version = request.args.get("version", '')
 
-    if version!="1.0":
+    if version!="2.0":
         return(u"主页已更新，请刷新主页。")
 
     keyList = preKey(searchword)

@@ -3,6 +3,7 @@
 
 from flask import Flask, render_template, session
 from main.main_blueprint import main_blueprint
+from odbc_blueprint.odbc_blueprint import odbc_blueprint
 from flask_session import Session as sess
 #import redis
 
@@ -16,6 +17,7 @@ app.config["SESSION_TYPE"] = "filesystem"
 sess(app)
 
 app.register_blueprint(main_blueprint)
+app.register_blueprint(odbc_blueprint)
 
 @app.route('/dbupdate')
 def dbupdate(): #更新数据库指南
