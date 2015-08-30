@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>EasyUI Test</title>
+	<link rel="stylesheet" type="text/css" href="../static/easyui/themes/default/easyui.css">
+	<link rel="stylesheet" type="text/css" href="../static/easyui/themes/icon.css">
+	<link rel="stylesheet" type="text/css" href="../static/easyui/demo/demo.css">
+	<script type="text/javascript" src="../static/easyui/jquery.min.js"></script>
+	<script type="text/javascript" src="../static/easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../static/js/json2.js"></script>
+	<script type="text/javascript" src="../static/js/test_easyui.js"></script>
+	<script type="text/javascript">
+		transparam('{{param|safe}}');	//传递参数,要加safe避免html转义，注意|safe是在大括号内的
+	</script>
+</head>
+<body>
+	<table id="test"></table>
+</body>

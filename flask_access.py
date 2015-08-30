@@ -3,7 +3,8 @@
 
 from flask import Flask, render_template, session
 from main.main_blueprint import main_blueprint
-from odbc_blueprint.odbc_blueprint import odbc_blueprint
+from otn.main import otn
+from otn_ring.main import otn_ring
 from flask_session import Session as sess
 #import redis
 
@@ -17,7 +18,9 @@ app.config["SESSION_TYPE"] = "filesystem"
 sess(app)
 
 app.register_blueprint(main_blueprint)
-app.register_blueprint(odbc_blueprint)
+app.register_blueprint(otn, url_prefix='/otn')	#加入了url前缀
+app.register_blueprint(otn_ring)
+
 
 @app.route('/dbupdate')
 def dbupdate(): #更新数据库指南
@@ -25,7 +28,7 @@ def dbupdate(): #更新数据库指南
 
 @app.route('/qlc')
 def qlc():
-	return render_template("qlcpage.html")    
+	return render_template("qlcpage.html")
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', threaded=True)       #设threaded即可以实现多线程访问了
