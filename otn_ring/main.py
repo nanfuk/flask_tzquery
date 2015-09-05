@@ -29,7 +29,7 @@ def get_data():
 	field_names = ["ring_index", "equiptype", "node", "remark"]
 	datas = []
 
-	g.cursor.execute(u"select 环路编号, 类型, 环上节点,备注 from %sr" % vender)   	#待改，不需要获取这么多的数据
+	g.cursor.execute(u"select 环路编号, 类型, 环上节点,备注 from %s" % vender)   	#待改，不需要获取这么多的数据
 
 	for row in g.cursor.fetchall():	#row是一个列值的tuple。((A1,B1,C1),(A2,B2,C2),(A3,B3,C3))
 		data = dict(zip(field_names, row))

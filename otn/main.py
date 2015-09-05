@@ -50,23 +50,28 @@ def teardown_request(exception):
         pass
     if conn is not None:
     	conn.close()
-
+    	
 @otn.route('/get_tree_json')
 def tree():
 	tablename_dict = {'750':u'750','baiyunting':u'白云厅','danan':u'大南', 'gangqian':u'岗前','guiguan':u'桂冠','gyy':u'工业园','haijingcheng':u"海景城","hebinnan":u"河滨南","hetai":u"和泰",
 	"huaduguangdian":u"花都广电",'jinzhou':u'金州',"kxc":u"科学城","qs":u"七所",'shiji':u"石基",'tyc':u"太阳城",'xinganglou':u"新港楼",'xm':u"夏茅",
-	"xsk":u"新时空","yj":u"云景","kexuezhongxinbei":u"科学中心北"}
+	"xsk":u"新时空","yj":u"云景","kexuezhongxinbei":u"科学中心北","changgangzhong":u"昌岗中","dongpushangye":u"东圃商业","dongxing":u"东兴","hualong":u"化龙","jiayi":u"加怡",
+	"nanguohuayuan":u"南国花园","nantianguangchang":u"南天广场","yuandong":u"远东","yuehao":u"越豪","zhongqiao":u"中侨","zhujiangguangchang":u"珠江广场"}
 	list_data = []
-	dict_data = {}
-	dict_data.setdefault("id","fh300_port")	#使用字典的setdefault来添加项值对
-	dict_data.setdefault("text",u"烽火3000")
-	g.cursor.execute("select table_name from information_schema.tables where table_schema='fh300_port'")
-	for tablename in g.cursor.fetchall():	#这里是添加列表，并配合列表的append来增长列表，可以看笔记记录的字典操作
-		dict_data.setdefault("children",[]).append({"text":tablename_dict[tablename[0]], "id":tablename[0],"attributes":{"parent":"fh300_port"}})
-		#为了能得到combotree选取值的父节点，加了attributes属性，使用方法:node.attributes.parent
+
+	vender_db_list = [('fh300_port',u"烽火3000"),('hw_port',u"华为"),('fh4000_port',u"烽火4000"),('zx_port',u"中兴")]
+
+	for vender_db,vender_name in vender_db_list:
+		dict_data = {}
+		dict_data.setdefault("id",vender_db)	#使用字典的setdefault来添加项值对
+		dict_data.setdefault("text",vender_name)	#字典取值
+		g.cursor.execute("select table_name from information_schema.tables where table_schema='%s'" % vender_db)
+		for tablename in g.cursor.fetchall():	#这里是添加列表，并配合列表的append来增长列表，可以看笔记记录的字典操作
+			dict_data.setdefault("children",[]).append({"text":tablename_dict[tablename[0]], "id":tablename[0],"attributes":{"parent":"%s" % vender_db}})
+			#为了能得到combotree选取值的父节点，加了attributes属性，使用方法:node.attributes.parent
 	
-	list_data.append(dict_data)
-	#pdb.set_trace()
+		list_data.append(dict_data)
+
 	return json.dumps(list_data)
 
 
@@ -124,3 +129,18 @@ def otn_port():
 		data = dict(zip(field_names, row))
 		datas.append(data)
 	return json.dumps(datas)
+
+
+@otn.route('/update', methods=['POST'])	#更新表格内容
+def update():
+	datas = []
+	#fields_doct = {"no":u"序号","anode":u"站点（本端落地）","direction":u"方向","znode":u"对端落地","route":"波道路由","wavelength"u"对应的高端系统时隙编号（波长编号）","index":u"广州联通电路编号","remark":u"备注"}
+	field_names = ["vender","tablename","anode","direction","znode","route","wavelength","index","remark","no"]
+	field_names_ = ["no","anode","direction","znode","route","wavelength","index","remark"]
+	values = map(lambda x:request.form[x], field_names)
+
+	sql = u"update %s.%s set 站点（本端落地）='%s',方向='%s',对端落地='%s',波道路由='%s',对应的高端系统时隙编号（波长编号）='%s',广州联通电路编号='%s',备注='%s' where 序号=%s" % tuple(values)
+	g.cursor.execute(sql)	#得提交commit
+	g.conn.commit()
+	
+	return sql 	#可以返回参数
