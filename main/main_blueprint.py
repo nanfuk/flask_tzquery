@@ -9,6 +9,7 @@ import re
 import excel
 import StringIO
 import xlwt
+import hashlib
 from urllib import unquote   #实现url解码
 #from flask_access import sess_interface, app
 
@@ -82,7 +83,7 @@ def tzquery():
     for rs,tablename in rs_generator:        
         counts=rs.RecordCount
         #pdb.set_trace()
-        entries.append(dict(rs=rs,tablename=tablename,counts=counts))
+        entries.append(dict(rs=rs,tablename=tablename,counts=counts,hash=hashlib.md5(tablename.encode('gbk')).hexdigest()))
         sum += counts
     time2 = time.time()
     print u"%s-->%s" % (searchword, area)
