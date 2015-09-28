@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="Generator" content="EditPlus®">
+  <meta name="Author" content="">
+  <meta name="Keywords" content="">
+  <meta name="Description" content="">
+  <title>查询列管理</title>
+ </head>
+ <body>
+	<ul>
+	{% for entry in entries %}
+		<li>
+			<h2>{{ entry.tablename }}</h2>
+			<table border="1" name="ss">
+				<tr>
+				<td>
+				{{ entry.rs.GetString(RowDelimeter="</td><td>")[:-4]|safe }}
+				</tr>
+			</table>
+		</li>
+	{% endfor %}
+	</ul>
+ </body>
+</html>

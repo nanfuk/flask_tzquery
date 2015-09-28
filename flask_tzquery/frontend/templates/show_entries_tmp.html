@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>查询结果</title>
+<meta name="description" content="">
+<meta name="keywords" content="">
+<link href="" rel="stylesheet">
+<style type="text/css">
+	.keyword{color:red;font-weight:bold;}
+</style>
+</head>
+
+<body>
+    <ul class=entries>
+    {% for entry in entries %}
+    	<li><h2>{{ entry.tablename }}</h2>
+    		<table border="1" name="ss">
+    			<tr> 			
+	    		{% for i in range(entry.rs.Fields.Count-1) %}
+					<th>{{entry.rs.Fields(i).Name}}</th>
+				{% endfor %}				
+				</tr>
+				{% for x in range(20) if not entry.rs.EOF %}
+				    <tr> 			
+		    		{% for i in range(entry.rs.Fields.Count-1) %}
+						<td>{{entry.rs.Fields(i).Value}}</td>
+					{% endfor %}				
+					</tr>
+					<!--{{ entry.rs.MoveNext() }}-->
+				{% endfor %}
+			</table>
+		</li>	
+    {% endfor %}
+    </ul>
+</body>
+
+<script type="text/javascript">
+	//alert("这是测试")
+	var ym=document.getElementsByTagName('body')[0].innerHTML;
+	document.getElementsByTagName('body')[0].innerHTML=ym.replace(/{{searchword}}/g,"<span class=keyword>{{searchword}}</span>");
+	
+</script>
+</html>

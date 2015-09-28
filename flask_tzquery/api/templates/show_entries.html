@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>查询结果</title>
+
+<style type="text/css">
+	.keyword1{color:red;font-weight:bold;}
+	.keyword2{color:#00EE00;font-weight:bold;}
+	.keyword3{color:#00BFFF;font-weight:bold;}
+	th{background-color:#CCFF99}
+</style>
+<link rel="stylesheet" type="text/css" href="../static/easyui/themes/default/easyui.css">
+<link rel="stylesheet" type="text/css" href="../static/easyui/themes/icon.css">
+<link rel="stylesheet" type="text/css" href="../static/easyui/demo/demo.css">
+<link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="/static/css/bootstrap-table.min.css">
+<script type="text/javascript" src="/static/easyui/jquery.min.js"></script>
+<script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/static/easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="/static/js/test_easyui.js"></script>
+<script type="text/javascript">
+	transparam({{entries}},{{searchword}});
+</script>
+<script type="text/javascript">
+$(document).ready(function(){
+	$("#export_xls").click(function(){
+		var searchword = "{{searchword}}";
+		alert("测试");
+		$.ajax({
+		    url:"/export",
+		    data:{"key":searchword},   //这里的data是发给服务器的数据,最后变为/test?...或post数据
+		    //success:function(data){alert("测试成功");},    //这里的data是服务器传过来的数据
+		    error:function(){alert("测试失败");},
+		    type:"GET",
+		    //dataType:"xls"
+		    });
+	});
+	var searchword = "{{searchword}}";
+	var area = "{{area}}"
+	$("#export_xls2").attr("href","/export?key="+encodeURIComponent(searchword)+"&area="+encodeURIComponent(area));
+
+	});
+</script>
+</head>
+
+<body>
+    {% for entry in entries %}
+    	
+			<table class="easyui-datagrid" data-options="nowrap:false,fitColumns:true">
+				<thead>
+					<tr>
+						{% for column in entry.columns %}
+						<th data-options="field:'{{column[0]}}',width:80">{{column[1]}}</th>
+						{% endfor %}
+					</tr>
+				</thead>
+				<tbody>
+					{% for data in entry.rs %}
+					<tr>
+						{% for content in data %}
+						<td>{{content}}</td>
+						{% endfor %}
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+	
+    {% endfor %}
+
+</body>
+
+{% for i in range(keys) %}
+<script type="text/javascript">
+
+	var ym=document.getElementsByTagName('body')[0].innerHTML;
+	var searchword = "{{keyList[i]}}".replace(/\\/g,"\\\\")
+	searchword = searchword.replace(/\(/g,"\\(")
+	searchword = searchword.replace(/\)/g,"\\)")
+	searchword = searchword.replace(/\[/g,"\\[")
+	searchword = searchword.replace(/\{/g,"\\{")	
+	searchword = searchword.replace(/\^/g,"\\^")
+	searchword = searchword.replace(/\$/g,"\\$")
+	searchword = searchword.replace(/\|/g,"\\|")
+	searchword = searchword.replace(/\?/g,"\\?")
+	searchword = searchword.replace(/\*/g,"\\*")
+	searchword = searchword.replace(/\+/g,"\\+")
+	searchword = searchword.replace(/\./g,"\\.")
+	re = new RegExp(searchword, "gi")
+	document.getElementsByTagName('body')[0].innerHTML=ym.replace(re,"<span class=keyword{{i+1}}>{{keyList[i]}}</span>");
+</script>
+{% endfor %}
+</html>

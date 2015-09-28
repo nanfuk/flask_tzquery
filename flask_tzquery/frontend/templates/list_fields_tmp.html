@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="Generator" content="EditPlus®">
+  <meta name="Author" content="">
+  <meta name="Keywords" content="">
+  <meta name="Description" content="">
+  <title>查询列管理</title>
+ </head>
+ <body>
+	<ul>
+	{% for entry in entries %}
+		<li>
+			<h2>{{ entry.tablename }}</h2>
+			<table border="1" name="ss">
+				<tr>
+				{% for x in range(30) if not entry.rs.EOF %}
+					<td> {{entry.rs.Fields(0).Value}}</td>
+				<!--{{ entry.rs.MoveNext() }}-->
+				{% endfor %}
+				</tr>
+			</table>
+		</li>
+	{% endfor %}
+	</ul>
+ </body>
+</html>
