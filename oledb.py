@@ -24,7 +24,8 @@ class oledb():
     acSpreadsheetTypeExcel9 = 8       #Microsoft Excel 2000 格式
     mes = Queue()
 
-    db_path = os.path.join(os.path.dirname(__file__),'base_db.accdb')
+    #db_path = os.path.join(os.path.dirname(__file__),'base_db.accdb')
+    db_path = os.path.join(os.path.dirname(__file__),'base_db.mdb')
 
     def __init__(self, databaseFile, excelDir):
         self.databaseFile = databaseFile
