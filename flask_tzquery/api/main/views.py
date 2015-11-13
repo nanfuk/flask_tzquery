@@ -9,13 +9,15 @@ import re
 #import excel    #??为什么要导入
 import StringIO
 import xlwt
+import hashlib
+
 from urllib import unquote   #实现url解码
 
 from . import bp
 from .other import preKey
-from ...odbc import accessdb
-#from flask_access import sess_interface, app
-
+#from ...odbc import accessdb
+#from ...oledb import accessdb
+from ...db_engine.oledb import accessdb
 
 #main_blueprint = Blueprint("main_blueprint", __name__)
 """
@@ -31,7 +33,7 @@ def preKey(str):      #对关键字进行预处理
 """
 @bp.before_request      #表示在请求页面之前先连接好数据库
 def before_request():
-    g.db = accessdb() #返回的是一个类实例
+    g.db = accessdb(current_app.config['DATABASE']) #返回的是一个类实例
     lt = time.localtime()
     time_format = "%Y-%m-%d %H:%M:%S"
     st = time.strftime(time_format, lt)
@@ -50,9 +52,9 @@ def entry():
     updatetime = "xxxx"
     return render_template("entry.html",updatetime=updatetime)
 
-@bp.route('/tzquery', methods=['GET','POST'])
+@bp.route('tzquery', methods=['GET','POST'])
 def tzquery():
-    """
+    
     time1 = time.time()
     if current_app.session_interface.judge_attack(current_app, request):
         session["time"] = time1
@@ -78,12 +80,20 @@ def tzquery():
     
     sum = 0
     entries = []
+    """
+    #以下为easyui的展示方式
     fields_A_to_Z = [chr(x) for x in range(65,91)]
     for rs, columns, tablename in rs_generator:        
         counts= len(rs) #rs是一个列表
         columns = zip(fields_A_to_Z,columns)    #[('A','列名一'),('B','列名二')...]
         if counts>0:
             entries.append(dict(rs=rs,tablename=tablename,columns=columns))
+        sum += counts
+    """
+    for rs,tablename in rs_generator:        
+        counts=rs.RecordCount
+        #pdb.set_trace()
+        entries.append(dict(rs=rs,tablename=tablename,counts=counts,hash=hashlib.md5(tablename.encode('gbk')).hexdigest()))
         sum += counts
     time2 = time.time()
     print u"%s-->%s" % (searchword, area)
@@ -100,7 +110,7 @@ def tzquery():
         return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
         #keys为关键字数目，因为在模板中无法使用len方法
     """
-
+    #以下为easyui通过ajax加载表格来提升访问速度的代码
     if request.method == 'GET':
         searchword = request.args.get('key', '')    #根据网页的设置编码来得出的是Unicode编码
         area = request.args.get('area', '')
@@ -116,7 +126,7 @@ def tzquery():
     index = int(request.form['index'])
     json_content = g.db.search_by_table_index(keyList, area, index) #这得返回json值
     return json_content
-
+    """
 
 @bp.route('/export')
 def export_xls():

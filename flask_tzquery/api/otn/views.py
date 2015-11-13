@@ -1,16 +1,16 @@
 #-*-coding:utf8-*-
 import sys
 import xlrd, xlwt
-from flask import g, request, jsonify, json, abort
+from flask import g, request, jsonify, json, abort, current_app
 import pdb
 import MySQLdb
-from config import vender_file_dict, tablename_dict
+#from config import vender_file_dict, tablename_dict
 
 #sys.path.append("..")   #是为了使用上级目录的模块
-#import excel    #excel模块在上级目录
 
 #otn = Blueprint("otn", __name__)
 from . import bp
+from ... import excel_engine    #excel_engine模块在上两级目录。
 
 
 class data_strucure():      #数据结构
@@ -26,26 +26,33 @@ class data_strucure():      #数据结构
         self.bd = table.cell(table_row, 6).value        #G列，波道
         self.lyxx = table.cell(table_row, 4).value  #E列，环路路由信息
 
+@bp.before_app_first_request
+def test():
+    current_app.config['xlsApp'] = excel_engine.init() #初始化。放在第一次请求前，是为了防止debug为true时两次加载造成启动两个excel进程的问题。
+    #print excel.xlsApp
+    #current_app.config['xlsApp'] = excel.xlsApp   #把启动的excel存入application context中，可以给其它函数调用。
+
 @bp.before_request
 def before_request():
     try:
         vender = request.form['vender']
         #
         if vender=="hw":
-            workbook_path = r"D:\flask_env\波分端口台账\华为波分端口资源表格（最新）.xls".decode("utf8")  #相对路径
+            #workbook_path = r"D:\flask_env\波分端口台账\华为波分端口资源表格（最新）.xls".decode("utf8")  #相对路径
+            workbook_path = current_app.config['VENDER_FILE_DICT']["hw_port"]
         elif vender=="fh3000":
-            workbook_path = r"..\波分端口台账\烽火波分3000端口资源表格（最新）.xlsx".decode("utf8")
+            #workbook_path = r"..\波分端口台账\烽火波分3000端口资源表格（最新）.xlsx".decode("utf8")
+            workbook_path = current_app.config['VENDER_FILE_DICT']["fh300_port"]
         elif vender=="fh4000":
-            workbook_path = r"..\波分端口台账\烽火波分4000端口资源表格（最新）.xls".decode("utf8")
+            workbook_path = current_app.config['VENDER_FILE_DICT']["fh4000_port"]
         elif vender=="zx":
-            workbook_path = r"..\波分端口台账\中兴波分端口资源表格（最新）.xlsx".decode("utf8")
-        pdb.set_trace()
+            workbook_path = current_app.config['VENDER_FILE_DICT']["zx_port"]    
         g.wb = xlrd.open_workbook(workbook_path)
 
     except:
-        
-        #g.conn = MySQLdb.connect(host="127.0.0.1",user="root",passwd="lanbinbin1989",db="fh300_port", charset='gbk') 
-        g.conn = MySQLdb.connect(host="127.0.0.1",user="root",passwd="lanbinbin1989",charset='gbk') 
+        username = current_app.config['USER']
+        passwd = current_app.config['PWD']
+        g.conn = MySQLdb.connect(host="127.0.0.1",user=username,passwd=passwd,charset='gbk') 
         g.cursor = g.conn.cursor()
 
 @bp.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
@@ -60,8 +67,8 @@ def teardown_request(exception):
     if conn is not None:
         conn.close()
     if ws is not None:
-        #pdb.set_trace()
-        excel.close(ws)
+        xlsApp = current_app.config['xlsApp']
+        xlsApp.close(True)
         
 @bp.route('/get_tree_json')
 def tree():
@@ -147,20 +154,29 @@ def otn_port():
 def update():
     field_names = ["vender","tablename","anode","direction","znode","route","wavelength","index","remark","no"]
     values = map(lambda x:request.form[x], field_names)
-
-    excelName = vender_file_dict[request.form["vender"]]
-    sheet = tablename_dict[request.form["tablename"]]
+    excelName = current_app.config['VENDER_FILE_DICT'][request.form["vender"]] #得excel名
+    #excelName = vender_file_dict[request.form["vender"]]    #得excel名
+    #sheet = tablename_dict[request.form["tablename"]]   #得表名
+    sheet = current_app.config['TABLENAME_DICT'][request.form["tablename"]]   #得表名
+    row_index = int(request.form["no"])    #得行号，强制转为int类型，得加1才行
+    index = request.form["index"]       #电路编号
+    remark = request.form["remark"]     #备注
 
     sql = u"update %s.%s set 站点（本端落地）='%s',方向='%s',对端落地='%s',波道路由='%s',对应的高端系统时隙编号（波长编号）='%s',广州联通电路编号='%s',备注='%s' where 序号=%s" % tuple(values)
     try:
-        pdb.set_trace()
+        #pdb.set_trace()
         g.cursor.execute(sql)   #得提交commit
         g.conn.commit()
         #存入excel
-        g.ws = excel.open(excelName, sheet, isDisplay=False)
-        pdb.set_trace()
+        xlsApp = current_app.config['xlsApp']
+        #pdb.set_trace()
+        g.ws = xlsApp.open(excelName, sheet, isDisplay=False)
+        xlsApp.write(row_index+1, 15, index)   #15列为电路编号，17列为备注
+        xlsApp.write(row_index+1, 18, remark)   #18列为备注
+        #g.ws = excel.open(excelName, sheet, isDisplay=False)
+        #pdb.set_trace()
         
     except:
-        pass
-    #    abort(501)  #更新失败则返回错误代码
+        #pass
+        abort(501)  #更新失败则返回错误代码
     return sql  #可以返回参数

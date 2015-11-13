@@ -2,7 +2,8 @@
 from flask import Flask
 
 from .helpers import register_blueprint
-from settings import template_folder, static_folder
+#from settings import template_folder, static_folder
+from .flask_session import Session as sess
 
 def create_app(package_name, package_path, setting_override=None,
 				register_security_blueprint=True):
@@ -12,6 +13,8 @@ def create_app(package_name, package_path, setting_override=None,
 	app.config.from_object("flask_tzquery.settings")
 	#app.config.from_pyfile("settings.cfg", silent=True)	#??
 	app.config.from_object(setting_override)
+
+	sess(app)	#加入session
 
 	register_blueprint(app, package_name, package_path)
 

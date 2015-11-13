@@ -1,6 +1,7 @@
 var tname = undefined;
-var rows = undefined;
-var editIndex = undefined;
+var vendername = undefined;
+//var rows = undefined;
+//var editIndex = undefined;
 $(document).ready(function(){
 		$("#tab-tools").tabs({			//生成选项卡
 			tabPosition:"left",
@@ -64,7 +65,7 @@ $(document).ready(function(){
 									},
 									success:function(data){
 										$("#dg_otn").datagrid('removeFilterRule');		//先清除过滤器
-										rows_index = true;
+										//rows_index = true;
 										$('#dg_otn').datagrid('loadData',JSON.parse(data));		//需要把json数据转为数组才能使用
 									}
 								});
@@ -94,16 +95,17 @@ $(document).ready(function(){
 			autoSave:'true',			//点击表格外时自动保存，注意是表格外
 			updateUrl:"/otn/update",		//跳转到jquery.edatagrid.js的55行onAfterEdit
 			onLoadSuccess:function(data){
-				if (tname!=$("input[name='jf_name']").val()){
+				if (tname!=$("input[name='jf_name']").val() || vendername!=$("input[name='vender_otn']").val()){
 					tname = $("input[name='jf_name']").val();
-					rows = $("#dg_otn").datagrid('getData').rows;
+					vendername = $("input[name='vender_otn']").val();
+					//rows = $("#dg_otn").datagrid('getData').rows;
 					$("#dg_otn").datagrid('enableFilter',[{			//加载完数据后再设置行过滤
 											field:"znode",
 											type:"combobox",
 											options:{
 												data:get_list(),		//自定义的函数，用于根据列表内容筛选znode单列去重值
 												onSelect:function(rec){
-													rows_index = false;
+													//rows_index = false;
 													$("#dg_otn").datagrid('addFilterRule',{
 														field:"znode",
 														op:"contains",
@@ -192,7 +194,7 @@ function modifyrecord(searchrecord){
 function get_list(){	//test
 	var o = [];
 	var a = [];
-	//var rows = $("#dg_otn").datagrid('getData').rows;
+	var rows = $("#dg_otn").datagrid('getData').rows;
 	for (var i = 0; i < rows.length; i++) {
 		o.push(rows[i].znode);
 		//o.push({value:rows[i].znode,text:rows[i].znode}); 	//必须得加value才能选中这个选项

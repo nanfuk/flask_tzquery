@@ -1,4 +1,5 @@
 #-*-coding:utf8-*-
+import re
 
 def preKey(str):      #对关键字进行预处理
     str = str.strip()

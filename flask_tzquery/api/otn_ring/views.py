@@ -1,5 +1,5 @@
 #-*-coding:utf8-*-
-from flask import g, request
+from flask import g, request, current_app
 import MySQLdb    
 import pdb,json
 
@@ -10,7 +10,9 @@ from . import bp
 
 @bp.before_request      #表示在请求页面之前先连接好数据库
 def before_request():
-	g.conn = MySQLdb.connect(host="127.0.0.1",user="root",passwd="lanbinbin1989",db="test", charset='gbk')  
+	username = current_app.config['USER']
+	passwd = current_app.config['PWD']
+	g.conn = MySQLdb.connect(host="127.0.0.1",user=username,passwd=passwd,db="test", charset='gbk')
 	g.cursor = g.conn.cursor()
 
 @bp.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
