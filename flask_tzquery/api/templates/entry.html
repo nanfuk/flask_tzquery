@@ -1,43 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-<title>传输台账查询</title>
-<meta name="description" content="">
-<meta name="keywords" content="">
-<link rel="stylesheet" type="text/css" href="static/css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="static/css/sticky-footer.css">
-<link rel="stylesheet" type="text/css" href="static/easyui/themes/default/easyui.css">
-<link rel="stylesheet" type="text/css" href="static/easyui/themes/icon.css">
-<script type="text/javascript" src="static/js/jquery-2.1.1.min.js"></script>
-<script type="text/javascript" src="static/js/json2.js"></script>
-<script type="text/javascript" src="static/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="static/easyui/jquery.easyui.min.js"></script>
-<script type="text/javascript" src="static/easyui/jquery.edatagrid.js"></script>
-<script type="text/javascript" src="static/easyui/datagrid-filter.js"></script>
-<script type="text/javascript" src="static/js/underscore-min.js"></script>
-<script src="static/js/jquery.cookie.js"></script>
-<!--<script type="text/javascript">
-	$(function(){
-		//$("#client").panel();
-		//$("#client").panel("move",{left:300,top:400});
-		var dg = $("#client-210").datagrid({
-			singleSelect:true,
-			url:"client_names",
-			method:"get",
-			collapsible:true, //可折叠
-			closable:true,	//可关闭，继承panel面板属性
-			nowrap:false,
-		});
-		dg.datagrid('enableFilter',[{
-			field:"itemid",
-			type:"numberbox",
-			op:['equal','notequal','less','greater']
-		}]);
-	});
-
-</script>-->
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<title>传输台账查询</title>
+	<meta name="description" content="">
+	<meta name="keywords" content="">
+	<link rel="stylesheet" type="text/css" href="static/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="static/css/sticky-footer.css">
+	<link rel="stylesheet" type="text/css" href="static/easyui/themes/default/easyui.css">
+	<link rel="stylesheet" type="text/css" href="static/easyui/themes/icon.css">
+	<link rel="icon" href="{{ url_for('static', filename = 'favicon.ico') }}" type="image/x-icon"> 
+	<script type="text/javascript" src="static/js/jquery-2.1.1.min.js"></script>
+	<script type="text/javascript" src="static/js/json2.js"></script>
+	<script type="text/javascript" src="static/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="static/easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="static/easyui/jquery.edatagrid.js"></script>
+	<script type="text/javascript" src="static/easyui/datagrid-filter.js"></script>
+	<script type="text/javascript" src="static/js/underscore-min.js"></script>
+	<script src="static/js/jquery.cookie.js"></script>
 </head>
 <body>
 	<div id="tab-tools">
@@ -247,7 +228,6 @@
 				$('#dg_otn').datagrid('loadData',JSON.parse(data));		//需要把json数据转为数组才能使用
 			}
 		});
-	}
-	
+	}	
 </script>
 </html>

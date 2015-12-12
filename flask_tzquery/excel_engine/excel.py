@@ -13,7 +13,7 @@ def init():
 class excel():
     def __init__(self):
         pythoncom.CoInitialize()
-        self.xlsApp = win32com.client.DispatchEx('Excel.Application') #不用Dispatch是因为待会关闭的时候会把其它Excel表格也关闭掉。
+        self.xlsApp = win32com.client.Dispatch('Excel.Application') #不用Dispatch是因为待会关闭的时候会把其它Excel表格也关闭掉。
 
         
     def open(self, excelName, sheet, isDisplay):   #打开excel文件，并返回是否为只读。

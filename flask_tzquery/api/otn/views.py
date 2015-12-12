@@ -132,18 +132,22 @@ def dispatch():
 @bp.route('/port', methods=['GET','POST'])
 def otn_port():
     datas = []
-    field_names = ["no","anode","direction","znode","route","wavelength","index","remark"]
+    field_names = ["no","anode","direction","znode","route","wavelength","neident","port","index","remark"]
     if request.method=='GET':
         dbname = request.args.get('vender_otn', '')
         tablename = request.args.get('jf_name', '')
-        wavelength = request.args.get('wavelength_val', "")
-        if wavelength !="":
-            g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 广州联通电路编号, 备注 from %s.%s where 对应的高端系统时隙编号（波长编号） like '_%s%%'" % (dbname,tablename,wavelength)) 
-        else:
-            g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 广州联通电路编号, 备注 from %s.%s" % (dbname,tablename)) 
-    else:
-        g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 广州联通电路编号, 备注 from fh300_port.750") 
+        #wavelength = request.args.get('wavelength_val', "")
 
+        g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注 from %s.%s" % (dbname,tablename)) 
+        """
+        if wavelength !="":
+            g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注 from %s.%s where 对应的高端系统时隙编号（波长编号） like '_%s%%'" % (dbname,tablename,wavelength)) 
+        else:
+            g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注 from %s.%s" % (dbname,tablename)) 
+        """
+    else:
+        g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注 from fh300_port.750") 
+        
     for row in g.cursor.fetchall(): #row是一个列值的tuple。((A1,B1,C1),(A2,B2,C2),(A3,B3,C3))
         data = dict(zip(field_names, row))
         datas.append(data)
