@@ -82,15 +82,13 @@ $(document).ready(function(){
 			fitColumns:true,
 			columns:[[
 						{field:"no",title:"序号",width:5},
-						{field:"anode",title:"本端",width:15},
-						{field:"direction",title:"方向",width:15},
-						{field:"znode",title:"对端",width:15},
-						{field:"route",title:"波道路由",width:25},
-						{field:"wavelength",title:"波长编号",width:5},
-						{field:"neident",title:"网元标识",width:7},
-						{field:"port",title:"支路端口",width:15},
+						{field:"anode",title:"本端",width:20},
+						{field:"direction",title:"方向",width:20},
+						{field:"znode",title:"对端",width:20},
+						{field:"route",title:"波道路由",width:20},
+						{field:"wavelength",title:"波长编号",width:8},
 						{field:"index",title:"电路编号",width:20,editor:"text"},
-						{field:"remark",title:"备注",width:25,editor:"text"}
+						{field:"remark",title:"备注",width:20,editor:"text"}
 					]],
 			fitColumns:'true',
 			toolbar:'#toolbar_otn',
