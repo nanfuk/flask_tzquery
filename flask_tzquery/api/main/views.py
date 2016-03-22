@@ -37,7 +37,6 @@ def before_request():
     lt = time.localtime()
     time_format = "%Y-%m-%d %H:%M:%S"
     st = time.strftime(time_format, lt)
-    print u"开始时间:%s" % st
 
 @bp.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
 def teardown_request(exception):

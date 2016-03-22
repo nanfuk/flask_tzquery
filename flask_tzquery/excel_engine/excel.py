@@ -94,3 +94,7 @@ class excel():
         #self.xlsBook.Close(True)
         #self.xlsApp.Quit()
         
+    def app_quit(self):
+        print 'xxsd'
+        self.xlsApp = None
+        

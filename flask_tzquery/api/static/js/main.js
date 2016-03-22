@@ -198,7 +198,10 @@ function get_list(){	//test
 	var a = [];
 	var rows = $("#dg_otn").datagrid('getData').rows;
 	for (var i = 0; i < rows.length; i++) {
-		o.push(rows[i].znode);
+		if(rows[i].znode!=null){	//避免出现空内容的空格时，下拉框筛选框会有一小行空白
+			o.push(rows[i].znode);
+		}
+		
 		//o.push({value:rows[i].znode,text:rows[i].znode}); 	//必须得加value才能选中这个选项
 	}
 	o = _.uniq(o);		//特定引入的用于数组去重的。

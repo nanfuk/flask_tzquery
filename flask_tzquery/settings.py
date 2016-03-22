@@ -3,10 +3,11 @@
 只有大写名称的值才会存储到配置字典对象中
 调用时使用:app.config['DATABASE']
 """
-import os
+import os,sys
 
 DEBUG = True
 SECRET_KEY = "Spe.22"
+PATH = u"D:\\Softwares\\flask_env\\flask_tzquery"
 
 """
 MySQL参数
@@ -18,7 +19,8 @@ PWD = '1989'
 session配置参数
 """
 SESSION_TYPE = 'filesystem'
-DATABASE = os.path.join(os.getcwd(),"database","base_db.mdb")	#使用app.config['DATABASE']调用
+#DATABASE = os.path.join(os.getcwd(),"database","base_db.mdb")	#使用app.config['DATABASE']调用,os.getcwd()在Apache中是Apache的安装路径。
+DATABASE = os.path.join(PATH,"database","base_db.mdb")	#使用app.config['DATABASE']调用,os.getcwd()在Apache中是Apache的安装路径。
 
 
 """
