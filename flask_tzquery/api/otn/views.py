@@ -28,7 +28,8 @@ class data_strucure():      #数据结构
 
 @bp.before_app_first_request
 def test():
-    current_app.config['xlsApp'] = excel_engine.init() #初始化。放在第一次请求前，是为了防止debug为true时两次加载造成启动两个excel进程的问题。
+    #current_app.config['xlsApp'] = excel_engine.init() #初始化。放在第一次请求前，是为了防止debug为true时两次加载造成启动两个excel进程的问题。
+    pass
     #print excel.xlsApp
     #current_app.config['xlsApp'] = excel.xlsApp   #把启动的excel存入application context中，可以给其它函数调用。
 
@@ -61,6 +62,9 @@ def teardown_request(exception):
     wb = getattr(g, 'wb', None)
     conn = getattr(g, 'conn', None)
     ws = getattr(g, 'ws', None)
+    xlsApp = getattr(g, 'xlsApp', None)
+    #import pdb;pdb.set_trace()
+
     if wb is not None:
         #wb.close()     #待分析是否这样关闭
         pass
@@ -69,6 +73,10 @@ def teardown_request(exception):
     if ws is not None:
         xlsApp = current_app.config['xlsApp']
         xlsApp.close(True)
+        
+    if xlsApp is not None:
+        xlsApp.close(isSave=True)   #保存并关闭wb
+        #xlsApp.app_quit()   #退出并销毁进程
         
 @bp.route('/get_tree_json')
 def tree():
@@ -172,11 +180,16 @@ def update():
         g.cursor.execute(sql)   #得提交commit
         g.conn.commit()
         #存入excel
-        xlsApp = current_app.config['xlsApp']
+        
+        #import pdb;pdb.set_trace()
+        #xlsApp = current_app.config['xlsApp']
+        g.xlsApp = xlsApp = excel_engine.init()
         #pdb.set_trace()
-        g.ws = xlsApp.open(excelName, sheet, isDisplay=False)
+        #g.ws = xlsApp.open(excelName, sheet, isDisplay=False)
+        xlsApp.open(excelName, sheet, isDisplay=False)
         xlsApp.write(row_index+1, 15, index)   #15列为电路编号，17列为备注
         xlsApp.write(row_index+1, 18, remark)   #18列为备注
+
         #g.ws = excel.open(excelName, sheet, isDisplay=False)
         #pdb.set_trace()
         

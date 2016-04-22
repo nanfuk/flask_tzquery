@@ -72,63 +72,81 @@
 			</div>
 		</div>
 		<div title="波分资源分配">
-			<div id="cc" class="easyui-layout" style="width:100%;height:100%;">
-				<div data-options="region:'north',split:true" style="height:70%;">
-					<table id="dg_otn" style="width:100%;height:100%;"></table>
-				</div>
-				<div data-options="region:'west',title:'West',split:true" style="width:50%;">
-					<div style="padding:10px 60px 20px 60px">
-		    			<form id="ff" method="post">
-			    			<table cellpadding="5">
-					    		<tr>
-					    			<td>A端地址:</td>
-					    			<td><input class="easyui-textbox" type="text" name="atable" data-options="required:true"></input></td>
-					    		</tr>
-					    		<tr>
-					    			<td>A端序号:</td>
-					    			<td><input class="easyui-textbox" type="text" name="ano" data-options="required:true"></input></td>
-					    		</tr>
-					    		<tr>
-					    			<td>Z端地址:</td>
-					    			<td><input class="easyui-textbox" type="text" name="ztable" data-options="required:true"></input></td>
-					    		</tr>
-					    		<tr>
-					    			<td>Z端序号:</td>
-					    			<td><input class="easyui-textbox" type="text" name="zno" data-options="required:true"></input></td>
-					    		</tr>
-					    		<tr>
-					    			<td>波分设备:</td>
-					    			<td>
-					    				<select class="easyui-combobox" name="vender">
-					    					<option value="hw">华为</option>
-					    					<option value="fh3000">烽火3000</option>
-					    					<option value="fh4000">烽火4000</option>
-					    					<option value="zx">中兴</option>
-					    				</select>
-					    			</td>
-					    		</tr>
-			    			</table>
-			    		</form>
-					    <div style="text-align:center;padding:5px">
-					    	<a href="javascript:void(0)" class="easyui-linkbutton" onclick="submitForm()">Submit</a>
-					    	<a href="javascript:void(0)" class="easyui-linkbutton" onclick="clearForm()">Clear</a>
-					    </div>
-		    		</div>
-				</div>
-				<div data-options="region:'center',title:'center title'" style="padding:5px;background:#eee;">
-					<input class="easyui-textbox" id="output-box" data-options="multiline:true" style="word-wrap:break-word;width:100%;height:100%"/>
-				</div>
-			</div>
-			<div id="toolbar_otn">
-				<form id="otn_form">
-					<!--<input type="radio" class="radio_otn" name="vender_otn" value="fh300" checked="checked" />烽火3000
-					<input type="radio" class="radio_otn" name="vender_otn" value="fh4000" />烽火4000
-					<input type="radio" class="radio_otn" name="vender_otn" value="hw" />华为
-					<input type="radio" class="radio_otn" name="vender_otn" value="zx" />中兴-->
-					<input type="hidden" name="vender_otn"/>
-					<input id="jf_list" name="jf_name"/>
-				</form>
-			</div>
+			<!--<div id="tt" class="easyui-tabs" style="width:500px;height:250px;">-->
+
+			<div id="tt" class="easyui-tabs" fit="true">
+			    <div title="波分端口表">
+			        <div id="cc" class="easyui-layout" style="width:100%;height:100%">
+						<div data-options="region:'north',split:true" style="height:70%;">
+							<table id="dg_otn" style="width:100%;height:100%;"></table>
+						</div>
+						<div data-options="region:'west',title:'West',split:true" style="width:50%;height:100%">
+							<div style="padding:10px 60px 20px 60px">
+								<input type="text" id="circuitName"></input>
+				    			<form id="ff" method="post">
+					    			<table cellpadding="5">
+							    		<tr>
+							    			<td>A端地址:</td>
+							    			<td><input class="easyui-textbox" type="text" id="atable" name="atable" data-options="required:true"></input></td>
+							    		</tr>
+							    		<tr>
+							    			<td>A端序号:</td>
+							    			<td><input class="easyui-textbox" type="text" id="ano" name="ano" data-options="required:true"></input></td>
+							    		</tr>
+							    		<tr>
+							    			<td>Z端地址:</td>
+							    			<td><input class="easyui-textbox" type="text" id="ztable" name="ztable" data-options="required:true"></input></td>
+							    		</tr>
+							    		<tr>
+							    			<td>Z端序号:</td>
+							    			<td><input class="easyui-textbox" type="text" id="zno" name="zno" data-options="required:true"></input></td>
+							    		</tr>
+							    		<tr>
+							    			<td>波分设备:</td>
+							    			<td>
+							    				<select class="easyui-combobox" name="vender">
+							    					<option value="hw">华为</option>
+							    					<option value="fh3000">烽火3000</option>
+							    					<option value="fh4000">烽火4000</option>
+							    					<option value="zx">中兴</option>
+							    				</select>
+							    			</td>
+							    		</tr>
+					    			</table>
+					    		</form>
+							    <div style="text-align:center;padding:5px">
+							    	<a href="javascript:void(0)" class="easyui-linkbutton" onclick="submitForm()">Submit</a>
+							    	<a href="javascript:void(0)" class="easyui-linkbutton" onclick="clearForm()">Clear</a>
+							    </div>
+							    
+				    		</div>
+						</div>
+						<div data-options="region:'center',title:'center title'" style="padding:5px;background:#eee;">
+							<input class="easyui-textbox" id="output-box" data-options="multiline:true" style="word-wrap:break-word;width:100%;height:100%"/>
+						</div>
+					</div>
+					<div id="toolbar_otn">
+						<form id="otn_form">
+							<!--<input type="radio" class="radio_otn" name="vender_otn" value="fh300" checked="checked" />烽火3000
+							<input type="radio" class="radio_otn" name="vender_otn" value="fh4000" />烽火4000
+							<input type="radio" class="radio_otn" name="vender_otn" value="hw" />华为
+							<input type="radio" class="radio_otn" name="vender_otn" value="zx" />中兴-->
+							<input type="hidden" name="vender_otn"/>
+							<input id="jf_list" name="jf_name"/>
+						</form>
+					</div>
+					<div id="tab1_table_menu" class="easyui-menu" style="width: 50px; display: none;">
+					    <!--放置一个隐藏的菜单Div-->
+					    <div id="tab1_table_menu_source">设为源端</div>
+					    <div id="tab1_table_menu_dest">设为宿端</div>
+					    <div data-options="iconCls:'icon-save'" onclick="">删除</div>
+					    <!--具体的菜单事件请自行添加，跟toolbar的方法是基本一样的-->
+					</div>
+			    </div>
+			    <div title="路由显示" style="width:100%;height:100%">
+			        <table id="tab2_table" style="width:100%;height:100%;"></table>
+			    </div>
+			</div>			
 		</div>
 		<div title="全流程系统">
 		    <div id="silverlightControlHost" style="height:100%;width:100%;">
@@ -184,6 +202,7 @@
 			</div>
 		</div>
 	</div>
+	<div id="circuitNameDialog"><p>测试</p></div>
 </body>
 <script type="text/javascript" src="static/js/main.js"></script>
 <script>
@@ -228,6 +247,27 @@
 				$('#dg_otn').datagrid('loadData',JSON.parse(data));		//需要把json数据转为数组才能使用
 			}
 		});
-	}	
+	}
+
+
+	
+	$('#circuitName').textbox({
+	    buttonText:'电路编号',
+	    iconCls:'icon-man',
+	    required:true,
+	    missingMessage:'核心局房优先顺序：太阳城--夏茅--科学城--云景--新时空--750--七所--工业园--中侨--远东--东兴--化龙。汇聚机房优先顺序：按首字母',
+	    //iconAlign:'left',
+	    onClickButton:function(){
+	    	$('#circuitNameDialog').dialog('open')
+	    }
+	});
+
+	$('#circuitNameDialog').dialog({
+		modal:true,
+		title:'电路编号',
+		width:400,
+		height:200,
+		closed:true
+	});
 </script>
 </html>
