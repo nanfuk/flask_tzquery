@@ -10,21 +10,6 @@ $(document).ready(function(){
 
 	$(".radioItem").change(function(){		//点击radio按键触发的事件处理方法
 		var selectedValue = $("input[name='vender']:checked").val();
-		/*if (selectedValue=='fh'){
-			$("#dg").datagrid('load',{
-				vender:"fh"
-			})
-		}
-		else if(selectedValue=='hw'){
-			$("#dg").datagrid('load',{
-				vender:"hw"
-			})
-		}
-		else if(selectedValue=='zx'){
-			$("#dg").datagrid('load',{
-				vender:"zx"
-			})
-		}*/
 		$("#dg").datagrid('load',{
 				vender:selectedValue
 			})
@@ -64,19 +49,105 @@ $(document).ready(function(){
 									return $(this).form('enableValidation').form('validate');	// return false will stop the form submission
 								},
 								success:function(data){
-									$("#dg_otn").datagrid('removeFilterRule');		//先清除过滤器
+									//$("#dg_otn").datagrid('removeFilterRule');		//先清除过滤器
+									var id = node.id+"_"+node.attributes.parent	//id值用于区分不同tabs中不同的表格
+									$("#otn_resource_tabs").tabs('add',{
+										title:node.text,
+										content:'<table id="'+id+'" style="width:100%;height:100%;"></table>',
+										closable:true,
+										tools:[{
+											iconCls:'icon-mini-refresh',
+											handler:function(){
+												alert('refresh');
+											}
+										}]
+									});
 									//rows_index = true;
-									$('#dg_otn').datagrid('loadData',JSON.parse(data));		//需要把json数据转为数组才能使用
+									$("#"+id).edatagrid({
+										//title:'波分端口表',
+										//url:'/otn/port',	//post这个地址，在view.py中区分Get与Post，默认post是返回750的数据
+										singleSelect:"true",
+										nowrap:false,
+										fitColumns:true,
+										columns:[[
+													{field:"no",title:"序号",width:5},
+													{field:"anode",title:"本端",width:15},
+													{field:"direction",title:"方向",width:15},
+													{field:"znode",title:"对端",width:15},
+													{field:"route",title:"波道路由",width:25},
+													{field:"wavelength",title:"波长编号",width:5},
+													{field:"neident",title:"网元标识",width:7},
+													{field:"port",title:"支路端口",width:15},
+													{field:"index",title:"电路编号",width:20,editor:"text"},
+													{field:"remark",title:"备注",width:25,editor:"text"}
+												]],
+										//toolbar:'#toolbar_otn',
+										onRowContextMenu:function(e,index,row){
+											e.preventDefault(); //阻止浏览器捕获右键事件
+											$(this).datagrid("clearSelections"); //取消所有选中项
+											$(this).datagrid("selectRow", index); //根据索引选中该行
+											$.data(document.body, "index", row['no']);//将右击选中的某行数据放在缓存中
+											$.data(document.body, "jf_name", $("#jf_list").combotree('getText'));//将右击选中的某行数据放在缓存中
+											$('#tab1_table_menu').menu('show', {
+												//显示右键菜单
+								                left: e.pageX,//在鼠标点击处显示菜单
+								                top: e.pageY
+								            });
+										},
+										autoSave:'true',			//点击表格外时自动保存，注意是表格外
+										updateUrl:"/otn/update",		//跳转到jquery.edatagrid.js的55行onAfterEdit
+										onLoadSuccess:function(data){
+											if (tname!=$("input[name='jf_name']").val() || vendername!=$("input[name='vender_otn']").val()){
+												tname = $("input[name='jf_name']").val();
+												vendername = $("input[name='vender_otn']").val();
+												//rows = $("#dg_otn").datagrid('getData').rows;
+												$("#"+id).datagrid('enableFilter',[{			//加载完数据后再设置行过滤
+																		field:"znode",
+																		type:"combobox",
+																		options:{
+																			data:(function(){
+																				var o = [];
+																				var a = [];
+																				var rows = data.rows;
+																				for (var i = 0; i < rows.length; i++) {
+																					if(rows[i].znode!=null){	//避免出现空内容的空格时，下拉框筛选框会有一小行空白
+																						o.push(rows[i].znode);
+																					}
+																					
+																					//o.push({value:rows[i].znode,text:rows[i].znode}); 	//必须得加value才能选中这个选项
+																				}
+																				o = _.uniq(o);		//特定引入的用于数组去重的。
+
+																				for (var i = 0; i< o.length; i++) {
+																					a.push({value:o[i],text:o[i]}); 	//构建combobox的data,必须得加value才能选中这个选项
+																				}
+																				return a;					
+																			})(),		//自定义的函数，用于根据列表内容筛选znode单列去重值
+																			onSelect:function(rec){
+																				//rows_index = false;
+																				$("#"+id).datagrid('addFilterRule',{
+																					field:"znode",
+																					op:"contains",
+																					value:rec.value
+																				});
+																				$("#"+id).datagrid('doFilter');
+																			}
+																		}
+																	}]);
+											}
+										}
+									});		
+									$("#"+id).datagrid('loadData',JSON.parse(data));		//需要把json数据转为数组才能使用
 								}
 							});
 						}
 			});
-			$('#jf_list').combotree('setValue', 750);
-			$('input[name=vender_otn]').val("fh300_port");
+	$('#jf_list').combotree('setValue', 750);
+	$('input[name=vender_otn]').val("fh300_port");
 	
 	$("#dg_otn").edatagrid({
 		//title:'波分端口表',
-		url:'/otn/port',
+		url:'/otn/port', //post这个地址，在view.py中区分Get与Post，默认post是返回750的数据
 		singleSelect:"true",
 		nowrap:false,
 		fitColumns:true,
@@ -92,7 +163,7 @@ $(document).ready(function(){
 					{field:"index",title:"电路编号",width:20,editor:"text"},
 					{field:"remark",title:"备注",width:25,editor:"text"}
 				]],
-		toolbar:'#toolbar_otn',
+		//toolbar:'#toolbar_otn',
 		onRowContextMenu:function(e,index,row){
 			e.preventDefault(); //阻止浏览器捕获右键事件
 			$(this).datagrid("clearSelections"); //取消所有选中项
