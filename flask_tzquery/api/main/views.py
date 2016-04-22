@@ -1,21 +1,26 @@
 #-*-coding:utf8-*-
-import win32com.client
-from oledb import connect_accessdb
-from flask import Flask, g, render_template, request, make_response, Blueprint, session, redirect, url_for, session, current_app
+#import win32com.client
+#from oledb import connect_accessdb
+from flask import g, render_template, request, make_response, session, redirect, url_for, current_app
 import pdb
 import json
 import time
 import re
-import excel
+#import excel    #??为什么要导入
 import StringIO
 import xlwt
 import hashlib
+
 from urllib import unquote   #实现url解码
-#from flask_access import sess_interface, app
 
+from . import bp
+from .other import preKey
+#from ...odbc import accessdb
+#from ...oledb import accessdb
+from ...db_engine.oledb import accessdb
 
-main_blueprint = Blueprint("main_blueprint", __name__)
-
+#main_blueprint = Blueprint("main_blueprint", __name__)
+"""
 def preKey(str):      #对关键字进行预处理
     str = str.strip()
 
@@ -25,36 +30,30 @@ def preKey(str):      #对关键字进行预处理
     str = pattern.sub("%[", str)
 
     return str.split('*')   #返回的是一个列表
-
-@main_blueprint.before_request      #表示在请求页面之前先连接好数据库
+"""
+@bp.before_request      #表示在请求页面之前先连接好数据库
 def before_request():
-    g.db = connect_accessdb() #返回的是一个类实例
+    g.db = accessdb(current_app.config['DATABASE']) #返回的是一个类实例
     lt = time.localtime()
     time_format = "%Y-%m-%d %H:%M:%S"
     st = time.strftime(time_format, lt)
-    print u"开始时间:%s" % st
 
-@main_blueprint.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
+@bp.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
 def teardown_request(exception):
     db = getattr(g, 'db', None)
     if db is not None:
         db.close()
 
-@main_blueprint.route('/')
+@bp.route('/')
 def entry():
-    updatetime = g.db.getUpdatetime()
+    #updatetime = g.db.getUpdatetime()
     #session["time"] = "test"
+    updatetime = "xxxx"
     return render_template("entry.html",updatetime=updatetime)
 
-@main_blueprint.route('/tzquery')
+@bp.route('tzquery', methods=['GET','POST'])
 def tzquery():
-    #import pdb
-    #pdb.set_trace()
-    #print session["time"]
-    #lt = time.localtime()
-    #time_format = "%Y-%m-%d %H:%M:%S"
-    #st = time.strftime(time_format, lt)
-    #current_time = time.time()
+    
     time1 = time.time()
     if current_app.session_interface.judge_attack(current_app, request):
         session["time"] = time1
@@ -64,7 +63,7 @@ def tzquery():
     session["time"] = time1
 
     current_app.session_interface.save_session_without_response(current_app, session)
-    
+
     #if request.remote_addr == "10.117.194.222": #黑名单
     #    return(u"-_-!!")
 
@@ -72,14 +71,24 @@ def tzquery():
     area = request.args.get('area', '')
     version = request.args.get("version", '')
 
-    if version!="2.0":
+    if version!="1.0":
         return(u"主页已更新，请刷新主页。")
 
     keyList = preKey(searchword)
     rs_generator = g.db.search(keyList, area)    #返回的是一个迭代器，调用next()来获取数据
-
+    
     sum = 0
     entries = []
+    """
+    #以下为easyui的展示方式
+    fields_A_to_Z = [chr(x) for x in range(65,91)]
+    for rs, columns, tablename in rs_generator:        
+        counts= len(rs) #rs是一个列表
+        columns = zip(fields_A_to_Z,columns)    #[('A','列名一'),('B','列名二')...]
+        if counts>0:
+            entries.append(dict(rs=rs,tablename=tablename,columns=columns))
+        sum += counts
+    """
     for rs,tablename in rs_generator:        
         counts=rs.RecordCount
         #pdb.set_trace()
@@ -95,12 +104,30 @@ def tzquery():
         return render_template("too_many.html",sum=sum)
     else:
         pattern = re.compile(r"\\")   #这个正则是给模板用的。
-        searchword = pattern.sub(r"\\\\",searchword)
+        searchword = pattern.sub(r"\\\\",searchword)  #模板中是继承g的,尝试改下
+        #return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
         return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
         #keys为关键字数目，因为在模板中无法使用len方法
+    """
+    #以下为easyui通过ajax加载表格来提升访问速度的代码
+    if request.method == 'GET':
+        searchword = request.args.get('key', '')    #根据网页的设置编码来得出的是Unicode编码
+        area = request.args.get('area', '')
+        version = request.args.get("version", '')
+        index = 0   #传给js的，告知其下次请求的表号
+        param = json.dumps({'searchword':searchword,'area':area,'index':index})
+        return render_template('test_easyui.html', param=param)
 
+    searchword = request.form['searchword']    #根据网页的设置编码来得出的是Unicode编码
+    keyList = preKey(searchword)
+    area = request.form['area'] 
 
-@main_blueprint.route('/export')
+    index = int(request.form['index'])
+    json_content = g.db.search_by_table_index(keyList, area, index) #这得返回json值
+    return json_content
+    """
+
+@bp.route('/export')
 def export_xls():
     searchword = request.args.get('key', '')
     keyList = preKey(searchword)
@@ -157,14 +184,14 @@ def export_xls():
     #xlsBook.Close(False)
     #xlsApp.Quit()
 
-@main_blueprint.route('/list_fields')
+@bp.route('/list_fields')
 def listFields():
     rs_generator = g.db.list_fields()
     entries = [dict(rs=rs,tablename=tablename) for rs,tablename in rs_generator]
     #pdb.set_trace()
     return render_template('list_fields.html', entries=entries)
 
-@main_blueprint.route('/tname_manage',methods=['POST', 'GET'])
+@bp.route('/tname_manage',methods=['POST', 'GET'])
 def tnameManage():
     if request.method == 'GET':
         t1_json = g.db.tname_manage()
@@ -179,3 +206,16 @@ def tnameManage():
     g.db.tname_write(data)
     t1_json = g.db.tname_manage()
     return render_template('tname_manage.html', data=t1_json)
+"""
+@main_blueprint.route('/test')
+def test():
+    #rs_generator = g.db.search([u"新时空"], "01")    #返回的是一个迭代器，调用next()来获取数据
+    return g.db.search([u"新时空"], "01")
+"""
+@bp.route('/client_names')
+def clients_name():
+    return g.db.get_client_json()
+
+@bp.route('/test')
+def test():
+    return render_template('SilverlightApplication7TestPage.html')

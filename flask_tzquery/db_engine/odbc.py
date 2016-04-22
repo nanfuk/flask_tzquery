@@ -5,7 +5,11 @@ import json
 import pdb
 import collections
 
-db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "base_db.accdb")
+#db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "base_db.accdb")
+#db = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+#                    "database","base_db.accdb")
+
+#print db
 
 class accessdb():
     def __init__(self):

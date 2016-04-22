@@ -2,10 +2,17 @@
 
 import win32com.client
 import pdb
-import sys
+import pythoncom
+
+def init():
+    #pythoncom.CoInitialize()
+    instance = excel()
+    return instance
+
 
 class excel():
     def __init__(self):
+        pythoncom.CoInitialize()
         self.xlsApp = win32com.client.DispatchEx('Excel.Application') #不用Dispatch是因为待会关闭的时候会把其它Excel表格也关闭掉。
 
         
@@ -19,9 +26,9 @@ class excel():
         else:
             self.xlsApp.Visible = 0
         if self.xlsBook.ReadOnly == True :
-            return True
+            return None
         else:       
-            return False
+            return self.xlsBook
 
     def addtemplate(self, template_path, sheet, isDisplay):
         self.xlsBook = self.xlsApp.Workbooks.Add(template_path)
@@ -73,6 +80,7 @@ class excel():
 
     def close(self, isSave):    #参数为是否保存
         #pdb.set_trace()
+        self.xlsApp = None  #实验证明，先设xlsApp为None再关闭xlsBook才能销毁进程，不能颠倒顺序
         if isSave and not self.xlsBook.ReadOnly:
         #if self.xlsBook.ReadOnly == True:
             self.xlsBook.Close(True)
@@ -80,10 +88,14 @@ class excel():
             #self.xlsApp.WindowState = 3
             #pdb.set_trace()
             self.xlsBook.Close(False)
-        self.xlsApp.Quit()
+        #self.xlsApp.Quit()
         
         #self.xlsApp.WindowState = 3
         #pdb.set_trace()
         #self.xlsBook.Close(True)
         #self.xlsApp.Quit()
+        
+    def quit(self):
+        #print 'xxsd'
+        self.xlsApp = None
         

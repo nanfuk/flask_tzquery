@@ -108,9 +108,12 @@ class oledb():
         return rs
 
 class accessdb():
-    def __init__(self, conn):
-        self.conn = conn     #不使用oledb.conn_accessdb是为了能够多进程进行。
-        pass
+    def __init__(self, db):
+        #self.conn = conn     #不使用oledb.conn_accessdb是为了能够多进程进行。
+        pythoncom.CoInitialize()
+        DSN = r'PROVIDER=Microsoft.Ace.OLEDB.12.0;DATA SOURCE=%s;' % db
+        self.conn = win32com.client.Dispatch(r'ADODB.Connection')
+        self.conn.Open(DSN)
 
     def del_all_tables(self):        #删除access库的所有表
         a = oledb.conn_accessdb.OpenSchema(oledb.adSchemaTables)

@@ -43,12 +43,26 @@
 		nofilter: {
 			text: 'No Filter'
 		},
-		contains: {
-			text: 'Contains',
-			isMatch: function(source, value){
-				return source.toLowerCase().indexOf(value.toLowerCase()) >= 0;
-			}
-		},
+		contains: {		//修复空字符串匹配过滤不掉，数字类型当成字符类型过滤(0,1)过滤0时候的问题。http://my.oschina.net/gofan/blog/208535
+	        text: 'Contains',
+	        isMatch: function(source, value){
+	        	// 用于筛选值为空的单元格
+	        	if(value==" "){
+	        		if(source==""){
+	        			return true;
+	        		}
+	        		else{
+	        			return false;
+	        		}
+	        	}
+
+	            if(typeof(source) == "number"){
+	                return String(source).toLowerCase().indexOf(value.toLowerCase()) >= 0;
+	            } else {
+	                return source.toLowerCase().indexOf(value.toLowerCase()) >= 0;
+	            }
+	        }
+	    },
 		equal: {
 			text: 'Equal',
 			isMatch: function(source, value){
@@ -260,8 +274,16 @@
 			for(var i=0; i<rules.length; i++){
 				var rule = rules[i];
 				var source = row[rule.field];
-				if (source){
+				/* 修复bug
+				if (source || source == "" || typeof(source) == "number"){
 					var op = opts.operators[rule.op];
+					if (!op.isMatch(source, rule.value)){return false}
+				}*/
+				if (source==null) {
+					source = '';
+				}
+				var op = opts.operators[rule.op];
+				if (source || source == "") {
 					if (!op.isMatch(source, rule.value)){return false}
 				}
 			}
