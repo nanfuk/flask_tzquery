@@ -82,12 +82,12 @@
 
 	        <div id="cc" class="easyui-layout" style="width:100%;height:100%">
 				<div data-options="region:'north',split:true" style="height:70%;">
-					<div id="otn_resource_tabs" class="easyui-tabs" fit="true">
-	    				<div title="波分端口表">
-							<table id="dg_otn" style="width:100%;height:100%;"></table>
+					<div id="otn_resource_tabs">
+	    				<!--<div title="波分端口表">
+							<table id="dg_otn"></table>
 						</div>	<!--div 波分端口表-->
-						<div title="路由显示" style="width:100%;height:100%">
-				        	<table id="tab2_table" style="width:100%;height:100%;"></table>
+						<div title="路由显示">
+				        	<table id="tab2_table" style="width:100%;height:100%"></table>
 				    	</div>
 				    </div> <!--div otn_resource_tabs-->
 				</div> <!--div north-->
@@ -115,7 +115,7 @@
 					    		<tr>
 					    			<td>波分设备:</td>
 					    			<td>
-					    				<select class="easyui-combobox" name="vender">
+					    				<select class="easyui-combobox" name="vender" id="resource_vender">
 					    					<option value="hw">华为</option>
 					    					<option value="fh3000">烽火3000</option>
 					    					<option value="fh4000">烽火4000</option>

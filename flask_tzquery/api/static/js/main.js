@@ -36,6 +36,16 @@ $(document).ready(function(){
 		//updateUrl:"/otn/save"
 	});
 
+	$("#otn_resource_tabs").tabs({	//tabs构建
+		fit:true,
+		onSelect:function(title,index){
+			var table_name = title.split('_')[0];
+			var db_name = title.split('_')[1];
+			$.data(document.body,'db_name',db_name);	//取表名，用于右键选择时调用机房名称
+			$.data(document.body,"table_name",table_name);
+		}
+	});
+
 	$("#jf_list").combotree({
 						url:'/otn/get_tree_json',
 						method:'get',
@@ -44,164 +54,45 @@ $(document).ready(function(){
 							//为了能得到combotree选取值的父节点，加了attributes属性，使用方法:node.attributes.parent
 							//提交form前设置隐藏框的value值,把父节点值赋给这个隐藏框
 							$('#otn_form').form('submit',{
-								url:'otn/port',
+								url:'otn/port',	//在html定义form时默认是get请求的，参数就是form中的标签值
 								onSubmit:function(){
 									return $(this).form('enableValidation').form('validate');	// return false will stop the form submission
 								},
 								success:function(data){
 									//$("#dg_otn").datagrid('removeFilterRule');		//先清除过滤器
-									var id = node.id+"_"+node.attributes.parent	//id值用于区分不同tabs中不同的表格
-									$("#otn_resource_tabs").tabs('add',{
-										title:node.text,
-										content:'<table id="'+id+'" style="width:100%;height:100%;"></table>',
-										closable:true,
-										tools:[{
-											iconCls:'icon-mini-refresh',
-											handler:function(){
-												alert('refresh');
-											}
-										}]
-									});
-									//rows_index = true;
-									$("#"+id).edatagrid({
-										//title:'波分端口表',
-										//url:'/otn/port',	//post这个地址，在view.py中区分Get与Post，默认post是返回750的数据
-										singleSelect:"true",
-										nowrap:false,
-										fitColumns:true,
-										columns:[[
-													{field:"no",title:"序号",width:5},
-													{field:"anode",title:"本端",width:15},
-													{field:"direction",title:"方向",width:15},
-													{field:"znode",title:"对端",width:15},
-													{field:"route",title:"波道路由",width:25},
-													{field:"wavelength",title:"波长编号",width:5},
-													{field:"neident",title:"网元标识",width:7},
-													{field:"port",title:"支路端口",width:15},
-													{field:"index",title:"电路编号",width:20,editor:"text"},
-													{field:"remark",title:"备注",width:25,editor:"text"}
-												]],
-										//toolbar:'#toolbar_otn',
-										onRowContextMenu:function(e,index,row){
-											e.preventDefault(); //阻止浏览器捕获右键事件
-											$(this).datagrid("clearSelections"); //取消所有选中项
-											$(this).datagrid("selectRow", index); //根据索引选中该行
-											$.data(document.body, "index", row['no']);//将右击选中的某行数据放在缓存中
-											$.data(document.body, "jf_name", $("#jf_list").combotree('getText'));//将右击选中的某行数据放在缓存中
-											$('#tab1_table_menu').menu('show', {
-												//显示右键菜单
-								                left: e.pageX,//在鼠标点击处显示菜单
-								                top: e.pageY
-								            });
-										},
-										autoSave:'true',			//点击表格外时自动保存，注意是表格外
-										updateUrl:"/otn/update",		//跳转到jquery.edatagrid.js的55行onAfterEdit
-										onLoadSuccess:function(data){
-											if (tname!=$("input[name='jf_name']").val() || vendername!=$("input[name='vender_otn']").val()){
-												tname = $("input[name='jf_name']").val();
-												vendername = $("input[name='vender_otn']").val();
-												//rows = $("#dg_otn").datagrid('getData').rows;
-												$("#"+id).datagrid('enableFilter',[{			//加载完数据后再设置行过滤
-																		field:"znode",
-																		type:"combobox",
-																		options:{
-																			data:(function(){
-																				var o = [];
-																				var a = [];
-																				var rows = data.rows;
-																				for (var i = 0; i < rows.length; i++) {
-																					if(rows[i].znode!=null){	//避免出现空内容的空格时，下拉框筛选框会有一小行空白
-																						o.push(rows[i].znode);
-																					}
-																					
-																					//o.push({value:rows[i].znode,text:rows[i].znode}); 	//必须得加value才能选中这个选项
-																				}
-																				o = _.uniq(o);		//特定引入的用于数组去重的。
-
-																				for (var i = 0; i< o.length; i++) {
-																					a.push({value:o[i],text:o[i]}); 	//构建combobox的data,必须得加value才能选中这个选项
-																				}
-																				return a;					
-																			})(),		//自定义的函数，用于根据列表内容筛选znode单列去重值
-																			onSelect:function(rec){
-																				//rows_index = false;
-																				$("#"+id).datagrid('addFilterRule',{
-																					field:"znode",
-																					op:"contains",
-																					value:rec.value
-																				});
-																				$("#"+id).datagrid('doFilter');
-																			}
-																		}
-																	}]);
-											}
-										}
-									});		
-									$("#"+id).datagrid('loadData',JSON.parse(data));		//需要把json数据转为数组才能使用
+									var id = node.id+"_"+node.attributes.parent;	//id值用于区分不同tabs中不同的表格
+									var table_name = node.text; //选取combotree的项名称，例如白云厅
+									var db_name = node.attributes.parentname; //选取combotree的父名称，例如烽火3000
+									var title = table_name+"_"+db_name;
+									/*
+									var index = $.data(document.body,"index");
+									if(index==undefined){
+										index = new Array();
+									}
+									index.push({"id":id,"db_name":db_name,"table_name":table_name,"selected":false});
+									*/
+									if($("#otn_resource_tabs").tabs('exists',title)){
+										$('#otn_resource_tabs').tabs('select', title); 
+									}else{
+										$("#otn_resource_tabs").tabs('add',{
+											title:title, //显示新时空_烽火3000
+											content:'<table id="'+id+'" style="width:100%;height:100%;"></table>',
+											closable:true,
+											tools:[{
+												iconCls:'icon-mini-refresh',
+												handler:function(){
+													alert('refresh');
+												}
+											}]
+										});
+										createAndLoadResourceEdategrid($("#"+id),data); //自定义的函数用于创建edategrid并加载数据
+									}
 								}
 							});
 						}
 			});
 	$('#jf_list').combotree('setValue', 750);
 	$('input[name=vender_otn]').val("fh300_port");
-	
-	$("#dg_otn").edatagrid({
-		//title:'波分端口表',
-		url:'/otn/port', //post这个地址，在view.py中区分Get与Post，默认post是返回750的数据
-		singleSelect:"true",
-		nowrap:false,
-		fitColumns:true,
-		columns:[[
-					{field:"no",title:"序号",width:5},
-					{field:"anode",title:"本端",width:15},
-					{field:"direction",title:"方向",width:15},
-					{field:"znode",title:"对端",width:15},
-					{field:"route",title:"波道路由",width:25},
-					{field:"wavelength",title:"波长编号",width:5},
-					{field:"neident",title:"网元标识",width:7},
-					{field:"port",title:"支路端口",width:15},
-					{field:"index",title:"电路编号",width:20,editor:"text"},
-					{field:"remark",title:"备注",width:25,editor:"text"}
-				]],
-		//toolbar:'#toolbar_otn',
-		onRowContextMenu:function(e,index,row){
-			e.preventDefault(); //阻止浏览器捕获右键事件
-			$(this).datagrid("clearSelections"); //取消所有选中项
-			$(this).datagrid("selectRow", index); //根据索引选中该行
-			$.data(document.body, "index", row['no']);//将右击选中的某行数据放在缓存中
-			$.data(document.body, "jf_name", $("#jf_list").combotree('getText'));//将右击选中的某行数据放在缓存中
-			$('#tab1_table_menu').menu('show', {
-				//显示右键菜单
-                left: e.pageX,//在鼠标点击处显示菜单
-                top: e.pageY
-            });
-		},
-		autoSave:'true',			//点击表格外时自动保存，注意是表格外
-		updateUrl:"/otn/update",		//跳转到jquery.edatagrid.js的55行onAfterEdit
-		onLoadSuccess:function(data){
-			if (tname!=$("input[name='jf_name']").val() || vendername!=$("input[name='vender_otn']").val()){
-				tname = $("input[name='jf_name']").val();
-				vendername = $("input[name='vender_otn']").val();
-				//rows = $("#dg_otn").datagrid('getData').rows;
-				$("#dg_otn").datagrid('enableFilter',[{			//加载完数据后再设置行过滤
-										field:"znode",
-										type:"combobox",
-										options:{
-											data:get_list(),		//自定义的函数，用于根据列表内容筛选znode单列去重值
-											onSelect:function(rec){
-												//rows_index = false;
-												$("#dg_otn").datagrid('addFilterRule',{
-													field:"znode",
-													op:"contains",
-													value:rec.value
-												});
-												$("#dg_otn").datagrid('doFilter');
-											}
-										}
-									}]);
-			}
-		}
-	});		
 		
 	$("#tab2_table").edatagrid({
 		singleSelect:"true",
@@ -244,20 +135,100 @@ $(document).ready(function(){
 	}
 });
 
+
+
+function createAndLoadResourceEdategrid(el,data){
+	el.edatagrid({
+		singleSelect:"true",
+		nowrap:false,
+		fitColumns:true,
+		columns:[[
+					{field:"no",title:"序号",width:5},
+					{field:"anode",title:"本端",width:15},
+					{field:"direction",title:"方向",width:15},
+					{field:"znode",title:"对端",width:15},
+					{field:"route",title:"波道路由",width:25},
+					{field:"wavelength",title:"波长编号",width:5},
+					{field:"neident",title:"网元标识",width:7},
+					{field:"port",title:"支路端口",width:15},
+					{field:"index",title:"电路编号",width:20,editor:"text"},
+					{field:"remark",title:"备注",width:25,editor:"text"}
+				]],
+		onRowContextMenu:function(e,index,row){
+			e.preventDefault(); //阻止浏览器捕获右键事件
+			$(this).datagrid("clearSelections"); //取消所有选中项
+			$(this).datagrid("selectRow", index); //根据索引选中该行
+
+			$.data(document.body, "row_index", row['no']);//将右击选中的某行数据放在缓存中
+			$('#tab1_table_menu').menu('show', {
+				//显示右键菜单
+                left: e.pageX,//在鼠标点击处显示菜单
+                top: e.pageY
+            });
+		},
+		autoSave:'true',			//点击表格外时自动保存，注意是表格外
+		updateUrl:"/otn/update",		//跳转到jquery.edatagrid.js的55行onAfterEdit
+		onLoadSuccess:function(data){
+			if (tname!=$("input[name='jf_name']").val() || vendername!=$("input[name='vender_otn']").val()){
+				tname = $("input[name='jf_name']").val();
+				vendername = $("input[name='vender_otn']").val();
+				//rows = $("#dg_otn").datagrid('getData').rows;
+				el.datagrid('enableFilter',[{			//加载完数据后再设置行过滤
+										field:"znode",
+										type:"combobox",
+										options:{
+											data:(function(){
+												var o = [];
+												var a = [];
+												var rows = data.rows;
+												for (var i = 0; i < rows.length; i++) {
+													if(rows[i].znode!=null){	//避免出现空内容的空格时，下拉框筛选框会有一小行空白
+														o.push(rows[i].znode);
+													}
+													
+													//o.push({value:rows[i].znode,text:rows[i].znode}); 	//必须得加value才能选中这个选项
+												}
+												o = _.uniq(o);		//特定引入的用于数组去重的。
+
+												for (var i = 0; i< o.length; i++) {
+													a.push({value:o[i],text:o[i]}); 	//构建combobox的data,必须得加value才能选中这个选项
+												}
+												return a;					
+											})(),		//自定义的函数，用于根据列表内容筛选znode单列去重值
+											onSelect:function(rec){
+												//rows_index = false;
+												el.datagrid('addFilterRule',{
+													field:"znode",
+													op:"contains",
+													value:rec.value
+												});
+												el.datagrid('doFilter');
+											}
+										}
+									}]);
+			}
+		}
+	});
+	el.datagrid('loadData',JSON.parse(data));		//需要把json数据转为数组才能使用
+}
+
+
 $("#tab1_table_menu").menu({
 	onClick:function(item){
         if(item.id=="tab1_table_menu_source"){
-        	//$("#atable").textbox("setText",$.data(document.body, "jf_name"));
-        	$("#atable").textbox("setValue",$.data(document.body, "jf_name"));
-        	$("#ano").textbox("setValue",$.data(document.body, "index"));	//从缓存取值
-        	$.data(document.body, "jf_name", "");     //清空缓存
-        	$.data(document.body, "index", "");     //清空缓存
+        	$("#atable").textbox("setValue",$.data(document.body, "table_name"));	//从缓存取表名
+        	$("#ano").textbox("setValue",$.data(document.body, "row_index"));	//从缓存行值
+        	$("#resource_vender").combobox('setText',$.data(document.body, "db_name"));
         }
         else if(item.id=="tab1_table_menu_dest"){
-        	$("#ztable").textbox("setValue",$.data(document.body, "jf_name"));
-        	$("#zno").textbox("setValue",$.data(document.body, "index"));	//从缓存取值
-        	$.data(document.body, "jf_name", "");     //清空缓存
-        	$.data(document.body, "index", "");     //清空缓存
+        	var resource_vender = $("#resource_vender").combobox('getText');
+        	if(resource_vender!=$.data(document.body,"db_name")){
+        		alert("源宿设备不一致！");
+        	}
+        	else{
+        		$("#ztable").textbox("setValue",$.data(document.body, "table_name"));
+        		$("#zno").textbox("setValue",$.data(document.body, "row_index"));	//从缓存取值
+        	}
         }
     }
 });

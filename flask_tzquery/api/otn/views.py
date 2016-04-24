@@ -94,7 +94,7 @@ def tree():
         dict_data.setdefault("text",vender_name)    #字典取值
         g.cursor.execute("select table_name from information_schema.tables where table_schema='%s'" % vender_db)
         for tablename in g.cursor.fetchall():   #这里是添加列表，并配合列表的append来增长列表，可以看笔记记录的字典操作
-            dict_data.setdefault("children",[]).append({"text":tablename_dict[tablename[0]], "id":tablename[0],"attributes":{"parent":"%s" % vender_db}})
+            dict_data.setdefault("children",[]).append({"text":tablename_dict[tablename[0]], "id":tablename[0],"attributes":{"parent":vender_db,"parentname":vender_name}})
             #为了能得到combotree选取值的父节点，加了attributes属性，使用方法:node.attributes.parent
     
         list_data.append(dict_data)
