@@ -60,7 +60,7 @@ $(document).ready(function(){
 								},
 								success:function(data){
 									//$("#dg_otn").datagrid('removeFilterRule');		//先清除过滤器
-									var id = node.id+"_"+node.attributes.parent;	//id值用于区分不同tabs中不同的表格
+									var id = node.id+"___"+node.attributes.parent;	//id值用于区分不同tabs中不同的表格
 									var table_name = node.text; //选取combotree的项名称，例如白云厅
 									var db_name = node.attributes.parentname; //选取combotree的父名称，例如烽火3000
 									var title = table_name+"_"+db_name;
@@ -167,7 +167,8 @@ function createAndLoadResourceEdategrid(el,data){
             });
 		},
 		autoSave:'true',			//点击表格外时自动保存，注意是表格外
-		updateUrl:"/otn/update",		//跳转到jquery.edatagrid.js的55行onAfterEdit
+		updateUrl:"/otn/update"		//跳转到jquery.edatagrid.js的55行onAfterEdit
+		/*
 		onLoadSuccess:function(data){
 			if (tname!=$("input[name='jf_name']").val() || vendername!=$("input[name='vender_otn']").val()){
 				tname = $("input[name='jf_name']").val();
@@ -207,9 +208,46 @@ function createAndLoadResourceEdategrid(el,data){
 										}
 									}]);
 			}
-		}
+		}*/
 	});
-	el.datagrid('loadData',JSON.parse(data));		//需要把json数据转为数组才能使用
+	
+	el.datagrid('loadData',JSON.parse(data));		//需要把json数据转为数组才能使用,必须在加载过滤器前加载表格数据
+
+	el.datagrid('enableFilter',
+						[{			//加载完数据后再设置行过滤
+							field:"znode",
+							type:"combobox",
+							options:{
+								data:(function(){
+									var o = [];
+									var a = [];
+									var rows = JSON.parse(data);
+									for (var i = 0; i < rows.length; i++) {
+										if(rows[i].znode!=null){	//避免出现空内容的空格时，下拉框筛选框会有一小行空白
+											o.push(rows[i].znode);
+										}
+										
+										//o.push({value:rows[i].znode,text:rows[i].znode}); 	//必须得加value才能选中这个选项
+									}
+									o = _.uniq(o);		//特定引入的用于数组去重的。
+
+									for (var i = 0; i< o.length; i++) {
+										a.push({value:o[i],text:o[i]}); 	//构建combobox的data,必须得加value才能选中这个选项
+									}
+									return a;					
+								})(),		//自定义的函数，用于根据列表内容筛选znode单列去重值
+								onSelect:function(rec){
+									//rows_index = false;
+									el.datagrid('addFilterRule',{
+										field:"znode",
+										op:"contains",
+										value:rec.value
+									});
+									el.datagrid('doFilter');
+								}
+							}
+						}]
+	);
 }
 
 

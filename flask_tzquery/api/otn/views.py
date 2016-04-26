@@ -167,8 +167,6 @@ def update():
     field_names = ["vender","tablename","anode","direction","znode","route","wavelength","index","remark","no"]
     values = map(lambda x:request.form[x], field_names)
     excelName = current_app.config['VENDER_FILE_DICT'][request.form["vender"]] #得excel名
-    #excelName = vender_file_dict[request.form["vender"]]    #得excel名
-    #sheet = tablename_dict[request.form["tablename"]]   #得表名
     sheet = current_app.config['TABLENAME_DICT'][request.form["tablename"]]   #得表名
     row_index = int(request.form["no"])    #得行号，强制转为int类型，得加1才行
     index = request.form["index"]       #电路编号

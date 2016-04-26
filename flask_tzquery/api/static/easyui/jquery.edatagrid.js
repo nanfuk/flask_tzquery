@@ -56,18 +56,24 @@
 				opts.editIndex = -1;
 				var url = row.isNewRecord ? opts.saveUrl : opts.updateUrl;	//js判断语句
 				if (url){
+					/*
+					var vender = $.data(document.body,'db_name');
+					var tablename = $.data(document.body,'table_name')
 					var vender = $("input[name='vender_otn']").val();	//波分数据库区别，这四句都是自写的，隐藏框
-					var tablename = $("input[name='jf_name']").val();	//表名区别，资源分配中的下拉框值 
-					//var vender = $("input[name='vender']:checked").val();	//radio键选择的结果
+					var tablename = $("input[name='jf_name']").val();	//表名区别，资源分配中的下拉框值
+					*/
+					var tablename = opts.id.split('___')[0]
+					var vender = opts.id.split('___')[1]
 					row.vender = vender;	//schema,数据库名
 					row.tablename = tablename;	//表名
+					
 					$.post(url, row).error(function() {	//自己新增的代码，不需检测返回的数据。
 						alert("更新出错！");
 					})
 					/* //下面被注释的是原来的代码
 					$.post(url, row, function(data){	//成功时调用的函数。
 						if (data.isError){
-							$(target).edatagrid('cancelRow',index);
+							$(target).edatagrid('cancelRow',index);		//target就是table的selector
 							$(target).edatagrid('selectRow',index);
 							$(target).edatagrid('editRow',index);
 							opts.onError.call(target, index, data);
