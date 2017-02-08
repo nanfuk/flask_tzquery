@@ -152,7 +152,7 @@
 		var opts = $(target).datagrid('options');
 		var rules = opts.filterRules;
 		var index = getRuleIndex(target, param.field);
-		if (index >= 0){
+		if (index >= 0){	//param.field是过滤的列，查询该列是否在规则列里面
 			if (param.op == 'nofilter'){
 				removeFilterRule(target, param.field);
 			} else {

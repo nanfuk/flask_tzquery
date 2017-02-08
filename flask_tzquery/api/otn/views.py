@@ -37,7 +37,7 @@ def test():
 def before_request():
     try:
         vender = request.form['vender']
-        #
+        
         if vender=="hw":
             #workbook_path = r"D:\flask_env\波分端口台账\华为波分端口资源表格（最新）.xls".decode("utf8")  #相对路径
             workbook_path = current_app.config['VENDER_FILE_DICT']["hw_port"]
@@ -108,7 +108,6 @@ def dispatch():
     source_table_row = int(request.form['ano'])
     dest_table_name = request.form['ztable']
     dest_table_row = int(request.form['zno'])
-    vender = request.form['vender']
 
     source_table = g.wb.sheet_by_name(source_table_name)
     dest_table = g.wb.sheet_by_name(dest_table_name)

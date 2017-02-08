@@ -138,6 +138,21 @@ $(document).ready(function(){
 
 
 function createAndLoadResourceEdategrid(el,data){
+	/*
+	$.extend($.fn.datagrid.defaults, {
+		filterMenuIconCls: 'icon-ok',
+		filterBtnIconCls: 'icon-filter',
+		filterBtnPosition: 'right',
+		filterPosition: 'bottom',
+		remoteFilter: false,
+		filterDelay: 400,
+		filterRules: [],
+		filterStringify: function(data){
+			return JSON.stringify(data);
+		}
+	});*/
+	$.extend($.fn.datagrid.defaults,{filterRules:[]});	//加载了新表格，得设filterRules为空，不然共享filterRules
+
 	el.edatagrid({
 		singleSelect:"true",
 		nowrap:false,
@@ -169,7 +184,7 @@ function createAndLoadResourceEdategrid(el,data){
 		autoSave:'true',			//点击表格外时自动保存，注意是表格外
 		updateUrl:"/otn/update"		//跳转到jquery.edatagrid.js的55行onAfterEdit
 		/*
-		onLoadSuccess:function(data){
+		onLoadSuccess:function(data){   //onLoadSuccess事件会在过滤器过滤后触发
 			if (tname!=$("input[name='jf_name']").val() || vendername!=$("input[name='vender_otn']").val()){
 				tname = $("input[name='jf_name']").val();
 				vendername = $("input[name='vender_otn']").val();
@@ -253,10 +268,15 @@ function createAndLoadResourceEdategrid(el,data){
 
 $("#tab1_table_menu").menu({
 	onClick:function(item){
+		var db_name_dict = {"华为":"hw","烽火3000":"fh3000","烽火4000":"fh4000","中兴":"zx"};
+
         if(item.id=="tab1_table_menu_source"){
         	$("#atable").textbox("setValue",$.data(document.body, "table_name"));	//从缓存取表名
         	$("#ano").textbox("setValue",$.data(document.body, "row_index"));	//从缓存行值
-        	$("#resource_vender").combobox('setText',$.data(document.body, "db_name"));
+        	//$("#resource_vender").combobox('setText',$.data(document.body, "db_name")); //不能只设Text，得设为select控件中的options值
+        	var db_name = db_name_dict[$.data(document.body, "db_name")];	//$.data(document.body, "db_name")得华为或烽火
+
+        	$("#resource_vender").combobox('setValue',db_name);
         }
         else if(item.id=="tab1_table_menu_dest"){
         	var resource_vender = $("#resource_vender").combobox('getText');
