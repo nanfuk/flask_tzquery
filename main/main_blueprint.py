@@ -48,13 +48,6 @@ def entry():
 
 @main_blueprint.route('/tzquery')
 def tzquery():
-    #import pdb
-    #pdb.set_trace()
-    #print session["time"]
-    #lt = time.localtime()
-    #time_format = "%Y-%m-%d %H:%M:%S"
-    #st = time.strftime(time_format, lt)
-    #current_time = time.time()
     time1 = time.time()
     if current_app.session_interface.judge_attack(current_app, request):
         session["time"] = time1
