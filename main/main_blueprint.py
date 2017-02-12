@@ -12,19 +12,37 @@ import xlwt
 import hashlib
 from urllib import unquote   #实现url解码
 #from flask_access import sess_interface, app
+from functools import wraps
 
 
 main_blueprint = Blueprint("main_blueprint", __name__)
 
-def preKey(str):      #对关键字进行预处理
-    str = str.strip()
+# def preKey(str):      #对关键字进行预处理
+#     str = str.strip()
 
-    pattern = re.compile("%")
-    str = pattern.sub("%%", str)
-    pattern = re.compile(r"\[")   #①r表示字符串的'\'不需转义。②但'['不能直接compile，需要'\'转义才能compile
-    str = pattern.sub("%[", str)
+#     pattern = re.compile("%")
+#     str = pattern.sub("%%", str)
+#     pattern = re.compile(r"\[")   #①r表示字符串的'\'不需转义。②但'['不能直接compile，需要'\'转义才能compile
+#     str = pattern.sub("%[", str)
 
-    return str.split('*')   #返回的是一个列表
+#     return str.split('*')   #返回的是一个列表
+
+def checkQueryStr(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        searchword = request.args.get('key', '').strip("* ")
+        if len(searchword)>=100:
+            return u"查询关键字过多！"
+        elif len(searchword)<=1:
+            return u"查询关键字过少！"
+        pattern = re.compile("%")
+        searchword = pattern.sub("%%", searchword)
+        pattern = re.compile(r"\[")   #①r表示字符串的'\'不需转义。②但'['不能直接compile，需要'\'转义才能compile
+        searchword = pattern.sub("%[", searchword)
+
+        g.keyList = searchword.split("*")
+        return f(*args, **kwargs)
+    return decorated_function
 
 @main_blueprint.before_request      #表示在请求页面之前先连接好数据库
 def before_request():
@@ -47,6 +65,7 @@ def entry():
     return render_template("entry.html",updatetime=updatetime)
 
 @main_blueprint.route('/tzquery')
+@checkQueryStr
 def tzquery():
     time1 = time.time()
     if current_app.session_interface.judge_attack(current_app, request):
@@ -62,13 +81,14 @@ def tzquery():
     #    return(u"-_-!!")
 
     searchword = request.args.get('key', '')    #根据网页的设置编码来得出的是Unicode编码
+    keyList = g.keyList
     area = request.args.get('area', '')
     version = request.args.get("version", '')
 
     if version!="2.0":
         return(u"主页已更新，请刷新主页。")
 
-    keyList = preKey(searchword)
+    # keyList = preKey(searchword)
     rs_generator = g.db.search(keyList, area)    #返回的是一个迭代器，调用next()来获取数据
 
     sum = 0
@@ -88,7 +108,7 @@ def tzquery():
         return render_template("too_many.html",sum=sum)
     else:
         pattern = re.compile(r"\\")   #这个正则是给模板用的。
-        searchword = pattern.sub(r"\\\\",searchword)
+        searchword = pattern.sub(r"\\\\", searchword)
         return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
         #keys为关键字数目，因为在模板中无法使用len方法
 

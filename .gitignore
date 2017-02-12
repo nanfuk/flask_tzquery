@@ -1,10 +1,12 @@
-#过滤数据库文件、python编译文件
+﻿#过滤数据库文件、python编译文件
 *.accdb
 *.mdb
 *.laccdb
 *.pyc
 *.bat
 *.xap
+*.ldb
+.gitignore
 
 #过滤文件夹Debug,Release,obj
 Debug/
