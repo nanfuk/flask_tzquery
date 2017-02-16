@@ -28,5 +28,5 @@ def qlc():
 	return render_template("qlcpage.html")    
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', threaded=True)       #设threaded即可以实现多线程访问了
+    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)       #设threaded即可以实现多线程访问了
     

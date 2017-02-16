@@ -114,10 +114,10 @@ def tzquery():
 
 
 @main_blueprint.route('/export')
+@checkQueryStr
 def export_xls():
     searchword = request.args.get('key', '')
-    keyList = preKey(searchword)
-    #pdb.set_trace()
+    keyList = g.keyList
     area = request.args.get("area", "") 
 
     rs_generator = g.db.search(keyList, area)
