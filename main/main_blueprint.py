@@ -76,7 +76,6 @@ def tzquery():
     session["time"] = time1
 
     current_app.session_interface.save_session_without_response(current_app, session)
-    
     #if request.remote_addr == "10.117.194.222": #黑名单
     #    return(u"-_-!!")
 
