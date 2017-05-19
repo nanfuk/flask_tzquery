@@ -1,10 +1,10 @@
 /**
- * jQuery EasyUI 1.4
+ * jQuery EasyUI 1.5.2
  * 
- * Copyright (c) 2009-2014 www.jeasyui.com. All rights reserved.
+ * Copyright (c) 2009-2017 www.jeasyui.com. All rights reserved.
  *
- * Licensed under the GPL license: http://www.gnu.org/licenses/gpl.txt
- * To use it on other terms please contact us at info@jeasyui.com
+ * Licensed under the freeware license: http://www.jeasyui.com/license_freeware.php
+ * To use it on other terms please contact us: info@jeasyui.com
  *
  */
 /**
@@ -21,7 +21,51 @@
 		
 		var param = $.extend({}, opts.queryParams);
 		if (opts.onSubmit.call(target, param) == false){return;}
-		
+
+		// $(target).find('.textbox-text:focus').blur();
+		var input = $(target).find('.textbox-text:focus');
+		input.triggerHandler('blur');
+		input.focus();
+
+		var disabledFields = null;	// the fields to be disabled
+		if (opts.dirty){
+			var ff = [];	// all the dirty fields
+			$.map(opts.dirtyFields, function(f){
+				if ($(f).hasClass('textbox-f')){
+					$(f).next().find('.textbox-value').each(function(){
+						ff.push(this);
+					});
+				} else {
+					ff.push(f);
+				}
+			});
+			disabledFields = $(target).find('input[name]:enabled,textarea[name]:enabled,select[name]:enabled').filter(function(){
+				return $.inArray(this, ff) == -1;
+			});
+			disabledFields.attr('disabled', 'disabled');
+		}
+
+		if (opts.ajax){
+			if (opts.iframe){
+				submitIframe(target, param);
+			} else {
+				if (window.FormData !== undefined){
+					submitXhr(target, param);
+				} else {
+					submitIframe(target, param);
+				}
+			}
+		} else {
+			$(target).submit();
+		}
+
+		if (opts.dirty){
+			disabledFields.removeAttr('disabled');
+		}
+	}
+
+	function submitIframe(target, param){
+		var opts = $.data(target, 'form').options;
 		var frameId = 'easyui_frame_' + (new Date().getTime());
 		var frame = $('<iframe id='+frameId+' name='+frameId+'></iframe>').appendTo('body')
 		frame.attr('src', window.ActiveXObject ? 'javascript:false' : 'about:blank');
@@ -95,13 +139,48 @@
 				}
 			} catch(e){
 			}
-			opts.success(data);
+			opts.success.call(target, data);
 			setTimeout(function(){
 				f.unbind();
 				f.remove();
 			}, 100);
 		}
 	}
+
+	function submitXhr(target, param){
+		var opts = $.data(target, 'form').options;
+		var formData = new FormData($(target)[0]);
+		for(var name in param){
+			formData.append(name, param[name]);
+		}
+		$.ajax({
+			url: opts.url,
+			type: 'post',
+			xhr: function(){
+				var xhr = $.ajaxSettings.xhr();
+				if (xhr.upload) {
+					xhr.upload.addEventListener('progress', function(e){
+						if (e.lengthComputable) {
+							var total = e.total;
+							var position = e.loaded || e.position;
+							var percent = Math.ceil(position * 100 / total);
+							opts.onProgress.call(target, percent);
+						}
+					}, false);
+				}
+				return xhr;
+			},
+			data: formData,
+			dataType: 'html',
+			cache: false,
+			contentType: false,
+			processData: false,
+			complete: function(res){
+				opts.success.call(target, res.responseText);
+			}
+		});
+	}
+	
 	
 	/**
 	 * load form data
@@ -134,67 +213,69 @@
 			var form = $(target);
 			for(var name in data){
 				var val = data[name];
-				var rr = _checkField(name, val);
-				if (!rr.length){
-					var count = _loadOther(name, val);
-					if (!count){
-						$('input[name="'+name+'"]', form).val(val);
-						$('textarea[name="'+name+'"]', form).val(val);
-						$('select[name="'+name+'"]', form).val(val);
+				if (!_checkField(name, val)){
+					if (!_loadBox(name, val)){
+						form.find('input[name="'+name+'"]').val(val);
+						form.find('textarea[name="'+name+'"]').val(val);
+						form.find('select[name="'+name+'"]').val(val);
 					}
 				}
-				_loadCombo(name, val);
 			}
 			opts.onLoadSuccess.call(target, data);
-			validate(target);
+			form.form('validate');
 		}
 		
 		/**
 		 * check the checkbox and radio fields
 		 */
 		function _checkField(name, val){
-			var rr = $(target).find('input[name="'+name+'"][type=radio], input[name="'+name+'"][type=checkbox]');
-			rr._propAttr('checked', false);
-			rr.each(function(){
-				var f = $(this);
-				if (f.val() == String(val) || $.inArray(f.val(), $.isArray(val)?val:[val]) >= 0){
-					f._propAttr('checked', true);
-				}
-			});
-			return rr;
-		}
-		
-		function _loadOther(name, val){
-			var count = 0;
-			var pp = ['textbox','numberbox','slider'];
-			for(var i=0; i<pp.length; i++){
-				var p = pp[i];
-				var f = $(target).find('input['+p+'Name="'+name+'"]');
-				if (f.length){
-					f[p]('setValue', val);
-					count += f.length;
-				}
+			var cc = $(target).find('[switchbuttonName="'+name+'"]');
+			if (cc.length){
+				cc.switchbutton('uncheck');
+				cc.each(function(){
+					if (_isChecked($(this).switchbutton('options').value, val)){
+						$(this).switchbutton('check');
+					}
+				});
+				return true;
 			}
-			return count;
+			cc = $(target).find('input[name="'+name+'"][type=radio], input[name="'+name+'"][type=checkbox]');
+			if (cc.length){
+				cc._propAttr('checked', false);
+				cc.each(function(){
+					if (_isChecked($(this).val(), val)){
+						$(this)._propAttr('checked', true);
+					}
+				});
+				return true;
+			}
+			return false;
+		}
+		function _isChecked(v, val){
+			if (v == String(val) || $.inArray(v, $.isArray(val)?val:[val]) >= 0){
+				return true;
+			} else {
+				return false;
+			}
 		}
 		
-		function _loadCombo(name, val){
-			var form = $(target);
-			var cc = ['combobox','combotree','combogrid','datetimebox','datebox','combo'];
-			var c = form.find('[comboName="' + name + '"]');
-			if (c.length){
-				for(var i=0; i<cc.length; i++){
-					var type = cc[i];
-					if (c.hasClass(type+'-f')){
-						if (c[type]('options').multiple){
-							c[type]('setValues', val);
+		function _loadBox(name, val){
+			var field = $(target).find('[textboxName="'+name+'"],[sliderName="'+name+'"]');
+			if (field.length){
+				for(var i=0; i<opts.fieldTypes.length; i++){
+					var type = opts.fieldTypes[i];
+					var state = field.data(type);
+					if (state){
+						if (state.options.multiple || state.options.range){
+							field[type]('setValues', val);
 						} else {
-							c[type]('setValue', val);
+							field[type]('setValue', val);
 						}
-						return;
+						return true;
 					}
 				}
 			}
+			return false;
 		}
 	}
 	
@@ -203,18 +284,21 @@
 	 */
 	function clear(target){
 		$('input,select,textarea', target).each(function(){
+			if ($(this).hasClass('textbox-value')){return;}
 			var t = this.type, tag = this.tagName.toLowerCase();
 			if (t == 'text' || t == 'hidden' || t == 'password' || tag == 'textarea'){
 				this.value = '';
 			} else if (t == 'file'){
 				var file = $(this);
-				var newfile = file.clone().val('');
-				newfile.insertAfter(file);
-				if (file.data('validatebox')){
-					file.validatebox('destroy');
-					newfile.validatebox();
-				} else {
-					file.remove();
+				if (!file.hasClass('textbox-value')){
+					var newfile = file.clone().val('');
+					newfile.insertAfter(file);
+					if (file.data('validatebox')){
+						file.validatebox('destroy');
+						newfile.validatebox();
+					} else {
+						file.remove();
+					}
 				}
 			} else if (t == 'checkbox' || t == 'radio'){
 				this.checked = false;
@@ -224,31 +308,32 @@
 			
 		});
 		
-		var t = $(target);
-		var plugins = ['textbox','combo','combobox','combotree','combogrid','slider'];
-		for(var i=0; i<plugins.length; i++){
-			var plugin = plugins[i];
-			var r = t.find('.'+plugin+'-f');
-			if (r.length && r[plugin]){
-				r[plugin]('clear');
+		var tmp = $();
+		var form = $(target);
+		var opts = $.data(target, 'form').options;
+		for(var i=0; i<opts.fieldTypes.length; i++){
+			var type = opts.fieldTypes[i];
+			var field = form.find('.'+type+'-f').not(tmp);
+			if (field.length && field[type]){
+				field[type]('clear');
+				tmp = tmp.add(field);
 			}
 		}
-		validate(target);
+		form.form('validate');
 	}
 	
 	function reset(target){
 		target.reset();
-		var t = $(target);
-		
-		var plugins = ['textbox','combo','combobox','combotree','combogrid','datebox','datetimebox','spinner','timespinner','numberbox','numberspinner','slider'];
-		for(var i=0; i<plugins.length; i++){
-			var plugin = plugins[i];
-			var r = t.find('.'+plugin+'-f');
-			if (r.length && r[plugin]){
-				r[plugin]('reset');
+		var form = $(target);
+		var opts = $.data(target, 'form').options;
+		for(var i=opts.fieldTypes.length-1; i>=0; i--){
+			var type = opts.fieldTypes[i];
+			var field = form.find('.'+type+'-f');
+			if (field.length && field[type]){
+				field[type]('reset');
 			}
 		}
-		validate(target);
+		form.form('validate');
 	}
 	
 	/**
@@ -265,6 +350,20 @@
 				return false;
 			});
 		}
+		$(target).bind('_change.form', function(e, t){
+			if ($.inArray(t, options.dirtyFields) == -1){
+				options.dirtyFields.push(t);
+			}
+			options.onChange.call(this, t);
+		}).bind('change.form', function(e){
+			var t = e.target;
+			if (!$(t).hasClass('textbox-text')){
+				if ($.inArray(t, options.dirtyFields) == -1){
+					options.dirtyFields.push(t);
+				}
+				options.onChange.call(this, t);
+			}
+		});
 		setValidation(target, options.novalidate);
 	}
 	
@@ -347,25 +446,45 @@
 			return jq.each(function(){
 				setValidation(this, false);
 			});
+		},
+		resetValidation: function(jq){
+			return jq.each(function(){
+				$(this).find('.validatebox-text:not(:disabled)').validatebox('resetValidation');
+			});
+		},
+		resetDirty: function(jq){
+			return jq.each(function(){
+				$(this).form('options').dirtyFields = [];
+			});
 		}
 	};
 	
 	$.fn.form.parseOptions = function(target){
 		var t = $(target);
-		return $.extend({}, $.parser.parseOptions(target, [{ajax:'boolean'}]), {
+		return $.extend({}, $.parser.parseOptions(target, [
+			{ajax:'boolean',dirty:'boolean'}
+		]), {
 			url: (t.attr('action') ? t.attr('action') : undefined)
 		});
 	};
 	
 	$.fn.form.defaults = {
+		fieldTypes: ['combobox','combotree','combogrid','combotreegrid','datetimebox','datebox','combo',
+		        'datetimespinner','timespinner','numberspinner','spinner',
+		        'slider','searchbox','numberbox','passwordbox','filebox','textbox','switchbutton'],
 		novalidate: false,
 		ajax: true,
+		iframe: true,
+		dirty: false,
+		dirtyFields: [],
 		url: null,
 		queryParams: {},
 		onSubmit: function(param){return $(this).form('validate');},
+		onProgress: function(percent){},
 		success: function(data){},
 		onBeforeLoad: function(param){},
 		onLoadSuccess: function(data){},
-		onLoadError: function(){}
+		onLoadError: function(){},
+		onChange: function(target){}
 	};
 })(jQuery);

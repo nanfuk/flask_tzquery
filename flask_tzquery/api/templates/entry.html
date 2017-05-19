@@ -72,26 +72,28 @@
 			</div>
 		</div>
 		<div title="波分资源分配">
-			<!--<div id="tt" class="easyui-tabs" style="width:500px;height:250px;">-->
-			<div id="toolbar_otn">
-				<form id="otn_form">
-					<input type="hidden" name="vender_otn"/>
-					<input id="jf_list" name="jf_name"/>
-				</form>
-			</div> <!--div toolbar_otn-->
-
-	        <div id="cc" class="easyui-layout" style="width:100%;height:95%">
-				<div data-options="region:'north',split:true" style="height:70%;">
-					<div id="otn_resource_tabs">
-	    				<!--<div title="波分端口表">
-							<table id="dg_otn"></table>
-						</div>	<!--div 波分端口表-->
-						<div title="路由显示">
-				        	<table id="tab2_table" style="width:100%;height:100%"></table>
-				    	</div>
-				    </div> <!--div otn_resource_tabs-->
+	        <div id="cc" class="easyui-layout" fit="true">
+				<div region="north" border="false" style="height:70%;">
+					<div class="easyui-layout" fit="true">
+						<div id="otn_resource_tabs" region="center" border="false">
+							<div title="路由显示">
+					        	<table id="tab2_table" style="width:100%;height:100%"></table>
+					    	</div>
+					    </div> <!--div otn_resource_tabs-->
+					    <div id="toolbar_otn" region="north" border="false">
+							<form id="otn_form" style="display:inline-block">
+								<input type="hidden" name="vender_otn"/>
+								<input id="jf_list" name="jf_name"/>
+							</form>
+							<div style="display:inline-block">
+								<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-ok" plain="true" onclick="accept()">确认</a>
+								<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-undo" plain="true" onclick="undo()">撤销</a>
+								<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-save" plain="true" onclick="save()">保存</a>
+							</div>
+						</div>
+					</div>
 				</div> <!--div north-->
-				<div data-options="region:'west',title:'West',split:true" style="width:50%;height:100%">
+				<div region="west" border="false" title="资源分配框" style="width:50%;height:100%">
 					<div style="padding:10px 60px 20px 60px;display:inline-block">
 						<input type="text" id="circuitName"></input>
 		    			<form id="ff" method="post">
@@ -131,7 +133,7 @@
 				    	<a href="javascript:void(0)" class="easyui-linkbutton" onclick="clearForm()">Clear</a>
 				    </div>
 				</div> <!--div west-->
-				<div data-options="region:'center',title:'center title'" style="padding:5px;background:#eee;">
+				<div region="center" border="false" title="资源输出框" style="padding:5px;background:#eee;">
 					<input class="easyui-textbox" id="output-box" data-options="multiline:true" style="word-wrap:break-word;width:100%;height:100%"/>
 				</div> <!--div center-->
 			</div> <!--div layout-->
@@ -165,9 +167,6 @@
 				<input type="radio" class="radioItem" name="vender" value="fhr" checked="checked" />烽火 
 				<input type="radio" class="radioItem" name="vender" value="hwr" />华为
 				<input type="radio" class="radioItem" name="vender" value="zxr" />中兴
-				<a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="newUser()">New User</a>
-				<a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="editUser()">Edit User</a>
-				<a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="destroyUser()">Remove User</a>
 			</div>
 
 			<div id="dlg" class="easyui-dialog" style="width:400px;height:280px;padding:10px 20px" closed="true" buttons="#dlg-buttons">
@@ -198,7 +197,6 @@
 			</div>
 		</div>
 	</div>
-	<div id="circuitNameDialog"><p>测试</p></div>
 </body>
 <script type="text/javascript" src="static/js/main.js"></script>
 <script>
@@ -216,20 +214,6 @@
 	}
 	function clearForm(){
 		$('#ff').form('clear');
-	}
-	function newUser(){
-		$('#dlg').dialog('open').dialog('setTitle','New User');
-		$('#fm').form('clear');
-		url = 'save_user.php';
-	}
-
-	function editUser(){
-		var row = $('#dg').datagrid('getSelected');
-		if (row){
-			$('#dlg').dialog('open').dialog('setTitle','Edit User');
-			$('#fm').form('load',row);
-			url = 'update_user.php?id='+row.id;
-		}
 	}
 
 	function submit_otnform(){
@@ -265,5 +249,53 @@
 		height:200,
 		closed:true
 	});
+
+	var editIndex = undefined;
+	var tableObject = undefined;
+	function endEdit(){
+		if(editIndex==undefined){return true}
+		if(tableObject.datagrid('validateRow', editIndex)){
+			tableObject.datagrid('endEdit', editIndex);
+			editIndex = undefined;
+			return true;
+		} else {
+			return false;
+		}
+	}
+	function edit(rowIndex, rowData){
+		if(editIndex!=rowIndex){
+			if(endEdit()){
+				tableObject.datagrid('selectRow',rowIndex)
+										.datagrid('beginEdit',rowIndex);
+				editIndex = rowIndex;
+			} else {
+				tableObject.datagrid('selectRow',editIndex);
+			}
+		}
+		tableObject.datagrid('beginEdit', rowIndex)
+	}
+	function accept(){
+		if(endEdit()){
+			// $("#tab2_table").datagrid('acceptChanges');
+			// var rows = tableObject.datagrid('getChanges');
+			// alert(rows.length+' rows are changed!');
+			// tableObject.datagrid('acceptChanges');
+			return;
+		}
+	}
+	function save(){
+		if(endEdit()){
+			var rows = tableObject.datagrid('getChanges');
+			tableObject.datagrid('acceptChanges');
+			alert(rows.length+' rows are changed!');
+		}
+	}
+	function undo(){
+		if(endEdit()){
+			tableObject.datagrid('rejectChanges');
+
+			// tableObject.datagrid('acceptChanges');
+		}
+	}
 </script>
 </html>

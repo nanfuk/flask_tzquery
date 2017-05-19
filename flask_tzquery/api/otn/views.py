@@ -83,7 +83,7 @@ def tree():
     tablename_dict = {'750':u'750','baiyunting':u'白云厅','danan':u'大南', 'gangqian':u'岗前','guiguan':u'桂冠','gyy':u'工业园','haijingcheng':u"海景城","hebinnan":u"河滨南","hetai":u"和泰",
     "huaduguangdian":u"花都广电",'jinzhou':u'金州',"kxc":u"科学城","qs":u"七所",'shiji':u"石基",'tyc':u"太阳城",'xinganglou':u"新港楼",'xm':u"夏茅",
     "xsk":u"新时空","yj":u"云景","kexuezhongxinbei":u"科学中心北","changgangzhong":u"昌岗中","dongpushangye":u"东圃商业","dongxing":u"东兴","hualong":u"化龙","jiayi":u"加怡",
-    "nanguohuayuan":u"南国花园","nantianguangchang":u"南天广场","yuandong":u"远东","yuehao":u"越豪","zhongqiao":u"中侨","zhujiangguangchang":u"珠江广场","yuntai":u"蕴泰"}
+    "nanguohuayuan":u"南国花园","nantianguangchang":u"南天广场","yuandong":u"远东","yuehao":u"越豪","zhongqiao":u"中侨","zhujiangguangchang":u"珠江广场","yuntai":u"蕴泰","jinfa":u"金发"}
     list_data = []
 
     vender_db_list = [('fh300_port',u"烽火3000"),('hw_port',u"华为"),('fh4000_port',u"烽火4000"),('zx_port',u"中兴")]
@@ -139,13 +139,13 @@ def dispatch():
 @bp.route('/port', methods=['GET','POST'])
 def otn_port():
     datas = []
-    field_names = ["no","anode","direction","znode","route","wavelength","neident","port","index","remark"]
+    field_names = ["no","anode","direction","znode","route","wavelength","neident","port","index","remark","lineport"]
     if request.method=='GET':
         dbname = request.args.get('vender_otn', '')
         tablename = request.args.get('jf_name', '')
         #wavelength = request.args.get('wavelength_val', "")
 
-        g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注 from %s.%s" % (dbname,tablename)) 
+        g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注, 对应10G波长转换板 from %s.%s" % (dbname,tablename)) 
         """
         if wavelength !="":
             g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注 from %s.%s where 对应的高端系统时隙编号（波长编号） like '_%s%%'" % (dbname,tablename,wavelength)) 
@@ -153,7 +153,7 @@ def otn_port():
             g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注 from %s.%s" % (dbname,tablename)) 
         """
     else:
-        g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注 from fh300_port.750") 
+        g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注, 对应10G波长转换板 from fh300_port.750") 
         
     for row in g.cursor.fetchall(): #row是一个列值的tuple。((A1,B1,C1),(A2,B2,C2),(A3,B3,C3))
         data = dict(zip(field_names, row))
@@ -163,35 +163,38 @@ def otn_port():
 
 @bp.route('/update', methods=['POST']) #更新表格内容
 def update():
-    field_names = ["vender","tablename","anode","direction","znode","route","wavelength","index","remark","no"]
+    field_names = ["vender","tablename","no","anode","direction","znode","route","wavelength","neident","lineport","port","index","remark"]
     values = map(lambda x:request.form[x], field_names)
     excelName = current_app.config['VENDER_FILE_DICT'][request.form["vender"]] #得excel名
     sheet = current_app.config['TABLENAME_DICT'][request.form["tablename"]]   #得表名
     row_index = int(request.form["no"])    #得行号，强制转为int类型，得加1才行
+    anode = request.form["anode"]
+    direction = request.form["direction"]
+    znode = request.form["znode"]
+    route = request.form['route']
+    wavelength = request.form['wavelength']
+    neident = request.form['neident']
+    lineport = request.form['lineport']
+    port = request.form['port']
     index = request.form["index"]       #电路编号
     remark = request.form["remark"]     #备注
 
     sql = u"update %s.%s set 站点（本端落地）='%s',方向='%s',对端落地='%s',波道路由='%s',对应的高端系统时隙编号（波长编号）='%s',广州联通电路编号='%s',备注='%s' where 序号=%s" % tuple(values)
     try:
-        #pdb.set_trace()
         g.cursor.execute(sql)   #得提交commit
         g.conn.commit()
         #存入excel
         
-        #import pdb;pdb.set_trace()
         #xlsApp = current_app.config['xlsApp']
         g.xlsApp = xlsApp = excel_engine.init()
-        #pdb.set_trace()
         #g.ws = xlsApp.open(excelName, sheet, isDisplay=False)
         xlsApp.open(excelName, sheet, isDisplay=False)
         xlsApp.write(row_index+1, 15, index)   #15列为电路编号，17列为备注
         xlsApp.write(row_index+1, 18, remark)   #18列为备注
 
         #g.ws = excel.open(excelName, sheet, isDisplay=False)
-        #pdb.set_trace()
         
     except:
-        #pass
         abort(501)  #更新失败则返回错误代码
     return sql  #可以返回参数
 

@@ -1,10 +1,10 @@
 /**
- * jQuery EasyUI 1.4
+ * jQuery EasyUI 1.5.2
  * 
- * Copyright (c) 2009-2014 www.jeasyui.com. All rights reserved.
+ * Copyright (c) 2009-2017 www.jeasyui.com. All rights reserved.
  *
- * Licensed under the GPL license: http://www.gnu.org/licenses/gpl.txt
- * To use it on other terms please contact us at info@jeasyui.com
+ * Licensed under the freeware license: http://www.jeasyui.com/license_freeware.php
+ * To use it on other terms please contact us: info@jeasyui.com
  *
  */
 /**
@@ -71,9 +71,9 @@
 			border: false,
 			doSize: true,	// size the panel, the property undefined in window component
 			closed: true,	// close the panel
-			cls: 'window',
-			headerCls: 'window-header',
-			bodyCls: 'window-body ' + (opts.noheader ? 'window-body-noheader' : ''),
+			cls: 'window ' + (!opts.border?'window-thinborder window-noborder ':(opts.border=='thin'?'window-thinborder ':'')) + (opts.cls || ''),
+			headerCls: 'window-header ' + (opts.headerCls || ''),
+			bodyCls: 'window-body ' + (opts.noheader ? 'window-body-noheader ' : ' ') + (opts.bodyCls||''),
 			
 			onBeforeDestroy: function(){
 				if (opts.onBeforeDestroy.call(target) == false){return false;}
@@ -87,10 +87,10 @@
 			},
 			onOpen: function(){
 				if (state.mask){
-					state.mask.css({
+					state.mask.css($.extend({
 						display:'block',
 						zIndex: $.fn.window.defaults.zIndex++
-					});
+					}, $.fn.window.getMaskSize(target)));
 				}
 				if (state.shadow){
 					state.shadow.css({
@@ -143,32 +143,57 @@
 		
 		// create mask
 		if (state.mask){state.mask.remove();}
-		if (opts.modal == true){
-			state.mask = $('<div class="window-mask"></div>').insertAfter(state.window);
-			state.mask.css({
-				width: (opts.inline ? state.mask.parent().width() : getPageArea().width),
-				height: (opts.inline ? state.mask.parent().height() : getPageArea().height),
-				display: 'none'
-			});
+		if (opts.modal){
+			state.mask = $('<div class="window-mask" style="display:none"></div>').insertAfter(state.window);
 		}
 		
 		// create shadow
 		if (state.shadow){state.shadow.remove();}
-		if (opts.shadow == true){
-			state.shadow = $('<div class="window-shadow"></div>').insertAfter(state.window);
-			state.shadow.css({
-				display: 'none'
-			});
+		if (opts.shadow){
+			state.shadow = $('<div class="window-shadow" style="display:none"></div>').insertAfter(state.window);
 		}
 		
-		// if require center the window
+		// center and open the window
+		var closed = opts.closed;
 		if (opts.left == null){hcenter(target);}
 		if (opts.top == null){vcenter(target);}
 		moveWindow(target);
-		
-		if (!opts.closed){
-			win.window('open');	// open the window
+		if (!closed){win.window('open');}
+	}
+
+	function constrain(left, top, width, height){
+		var target = this;
+		var state = $.data(target, 'window');
+		var opts = state.options;
+		if (!opts.constrain){return {};}
+		if ($.isFunction(opts.constrain)){
+			return opts.constrain.call(target, left, top, width, height);
 		}
+		var win = $(target).window('window');
+		var parent = opts.inline ? win.parent() : $(window);
+		if (left < 0){left = 0;}
+		if (top < parent.scrollTop()){top = parent.scrollTop();}
+		if (left + width > parent.width()){
+			if (width == win.outerWidth()){	// moving
+				left = parent.width() - width;
+			} else {	// resizing
+				width = parent.width() - left;
+			}
+		}
+		if (top - parent.scrollTop() + height > parent.height()){
+			if (height == win.outerHeight()){	// moving
+				top = parent.height() - height + parent.scrollTop();
+			} else {	// resizing
+				height = parent.height() - top + parent.scrollTop();
+			}
+		}
+
+		return {
+			left:left,
+			top:top,
+			width:width,
+			height:height
+		};
 	}
 	
 	
@@ -181,109 +206,97 @@
 		state.window.draggable({
 			handle: '>div.panel-header>div.panel-title',
 			disabled: state.options.draggable == false,
-			onStartDrag: function(e){
+			onBeforeDrag: function(e){
 				if (state.mask) state.mask.css('z-index', $.fn.window.defaults.zIndex++);
 				if (state.shadow) state.shadow.css('z-index', $.fn.window.defaults.zIndex++);
 				state.window.css('z-index', $.fn.window.defaults.zIndex++);
-				
-				if (!state.proxy){
-					state.proxy = $('<div class="window-proxy"></div>').insertAfter(state.window);
-				}
-				state.proxy.css({
-					display:'none',
-					zIndex: $.fn.window.defaults.zIndex++,
-					left: e.data.left,
-					top: e.data.top
-				});
-				state.proxy._outerWidth(state.window._outerWidth());
-				state.proxy._outerHeight(state.window._outerHeight());
-				setTimeout(function(){
-					if (state.proxy) state.proxy.show();
-				}, 500);
+			},
+			onStartDrag: function(e){
+				start1(e);
 			},
 			onDrag: function(e){
-				state.proxy.css({
-					display:'block',
-					left: e.data.left,
-					top: e.data.top
-				});
+				proc1(e);
 				return false;
 			},
 			onStopDrag: function(e){
-				state.options.left = e.data.left;
-				state.options.top = e.data.top;
-				$(target).window('move');
-				state.proxy.remove();
-				state.proxy = null;
+				stop1(e, 'move');
 			}
 		});
 		
 		state.window.resizable({
 			disabled: state.options.resizable == false,
 			onStartResize:function(e){
-				if (state.pmask){state.pmask.remove();}
-				state.pmask = $('<div class="window-proxy-mask"></div>').insertAfter(state.window);
-				state.pmask.css({
-					zIndex: $.fn.window.defaults.zIndex++,
-					left: e.data.left,
-					top: e.data.top,
-					width: state.window._outerWidth(),
-					height: state.window._outerHeight()
-				});
-				if (state.proxy){state.proxy.remove();}
-				state.proxy = $('<div class="window-proxy"></div>').insertAfter(state.window);
-				state.proxy.css({
-					zIndex: $.fn.window.defaults.zIndex++,
-					left: e.data.left,
-					top: e.data.top
-				});
-				state.proxy._outerWidth(e.data.width)._outerHeight(e.data.height);
+				start1(e);
 			},
 			onResize: function(e){
-				state.proxy.css({
-					left: e.data.left,
-					top: e.data.top
-				});
-				state.proxy._outerWidth(e.data.width);
-				state.proxy._outerHeight(e.data.height);
+				proc1(e);
 				return false;
 			},
 			onStopResize: function(e){
-				$(target).window('resize', e.data);
-				state.pmask.remove();
-				state.pmask = null;
-				state.proxy.remove();
-				state.proxy = null;
+				stop1(e, 'resize');
 			}
 		});
-	}
-	
-	function getPageArea() {
-		if (document.compatMode == 'BackCompat') {
-			return {
-				width: Math.max(document.body.scrollWidth, document.body.clientWidth),
-				height: Math.max(document.body.scrollHeight, document.body.clientHeight)
-			}
-		} else {
-			return {
-				width: Math.max(document.documentElement.scrollWidth, document.documentElement.clientWidth),
-				height: Math.max(document.documentElement.scrollHeight, document.documentElement.clientHeight)
-			}
+
+		function start1(e){
+			if (state.pmask){state.pmask.remove();}
+			state.pmask = $('<div class="window-proxy-mask"></div>').insertAfter(state.window);
+			state.pmask.css({
+				display: 'none',
+				zIndex: $.fn.window.defaults.zIndex++,
+				left: e.data.left,
+				top: e.data.top,
+				width: state.window._outerWidth(),
+				height: state.window._outerHeight()
+			});
+			if (state.proxy){state.proxy.remove();}
+			state.proxy = $('<div class="window-proxy"></div>').insertAfter(state.window);
+			state.proxy.css({
+				display: 'none',
+				zIndex: $.fn.window.defaults.zIndex++,
+				left: e.data.left,
+				top: e.data.top
+			});
+			state.proxy._outerWidth(e.data.width)._outerHeight(e.data.height);
+			state.proxy.hide();
+			setTimeout(function(){
+				if (state.pmask){state.pmask.show();}
+				if (state.proxy){state.proxy.show();}
+			}, 500);
+		}
+		function proc1(e){
+			$.extend(e.data, constrain.call(target, e.data.left, e.data.top, e.data.width, e.data.height));
+			state.pmask.show();
+			state.proxy.css({
+				display: 'block',
+				left: e.data.left,
+				top: e.data.top
+			});
+			state.proxy._outerWidth(e.data.width);
+			state.proxy._outerHeight(e.data.height);
+		}
+		function stop1(e, method){
+			$.extend(e.data, constrain.call(target, e.data.left, e.data.top, e.data.width+0.1, e.data.height+0.1));
+			$(target).window(method, e.data);
+			state.pmask.remove();
+			state.pmask = null;
+			state.proxy.remove();
+			state.proxy = null;
 		}
 	}
-	
+		
 	// when window resize, reset the width and height of the window's mask
-	$(window).resize(function(){
-		$('body>div.window-mask').css({
-			width: $(window)._outerWidth(),
-			height: $(window)._outerHeight()
-		});
-		setTimeout(function(){
-			$('body>div.window-mask').css({
-				width: getPageArea().width,
-				height: getPageArea().height
+	$(function(){
+		if (!$._positionFixed){
+			$(window).resize(function(){
+				$('body>div.window-mask:visible').css({
+					width: '',
+					height: ''
+				});
+				setTimeout(function(){
+					$('body>div.window-mask:visible').css($.fn.window.getMaskSize());
+				}, 50);
 			});
-		}, 50);
+		}
 	});
 	
 	$.fn.window = function(options, param){
@@ -306,7 +319,6 @@
 					options: $.extend({}, $.fn.window.defaults, $.fn.window.parseOptions(this), options)
 				});
 				if (!state.options.inline){
-//					$(this).appendTo('body');
 					document.body.appendChild(this);
 				}
 			}
@@ -352,6 +364,20 @@
 			});
 		}
 	};
+
+	$.fn.window.getMaskSize = function(target){
+		var state = $(target).data('window');
+		if (state && state.options.inline){
+			return {};
+		} else if ($._positionFixed){
+			return {position: 'fixed'};
+		} else {
+			return {
+				width: $(document).width(),
+				height: $(document).height()
+			};
+		}
+	};
 	
 	$.fn.window.parseOptions = function(target){
 		return $.extend({}, $.fn.panel.parseOptions(target), $.parser.parseOptions(target, [
@@ -366,6 +392,7 @@
 		resizable: true,
 		shadow: true,
 		modal: false,
+		border: true,	// possible values are: true,false,'thin','thick'
 		inline: false,	// true to stay inside its parent, false to go on top of all elements
 		
 		// window's property which difference from panel
@@ -374,6 +401,17 @@
 		minimizable: true,
 		maximizable: true,
 		closable: true,
-		closed: false
+		closed: false,
+		constrain: false
+		/*
+		constrain: function(left,top,width,height){
+			return {
+				left:left,
+				top:top,
+				width:width,
+				height:height
+			};
+		}
+		*/
 	});
 })(jQuery);

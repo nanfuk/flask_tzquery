@@ -43,8 +43,11 @@ $(document).ready(function(){
 			var db_name = title.split('_')[1];
 			$.data(document.body,'db_name',db_name);	//取表名，用于右键选择时调用机房名称
 			$.data(document.body,"table_name",table_name);
+			var tab = $(this).tabs('getSelected');
+			tableObject = tab.find(".tabs_table");
 		}
 	});
+
 
 	$("#jf_list").combotree({
 						url:'/otn/get_tree_json',
@@ -76,7 +79,7 @@ $(document).ready(function(){
 									}else{
 										$("#otn_resource_tabs").tabs('add',{
 											title:title, //显示新时空_烽火3000
-											content:'<table id="'+id+'" style="width:100%;height:100%;"></table>',
+											content:'<table class="tabs_table" id="'+id+'" style="width:100%;height:100%;"></table>',
 											closable:true,
 											tools:[{
 												iconCls:'icon-mini-refresh',
@@ -109,7 +112,6 @@ $(document).ready(function(){
 					{field:"dispatchStaff",title:"分配人员",width:5},
 					{field:"remark",title:"备注",width:25,editor:"text"}
 		]]
-
 	});	
 
 	var dg = $("#client-210").datagrid({
@@ -153,22 +155,24 @@ function createAndLoadResourceEdategrid(el,data){
 	});*/
 	$.extend($.fn.datagrid.defaults,{filterRules:[]});	//加载了新表格，得设filterRules为空，不然共享filterRules
 
-	el.edatagrid({
+	el.datagrid({
 		singleSelect:"true",
 		nowrap:false,
 		fitColumns:true,
 		columns:[[
 					{field:"no",title:"序号",width:5},
-					{field:"anode",title:"本端",width:15},
-					{field:"direction",title:"方向",width:15},
-					{field:"znode",title:"对端",width:15},
-					{field:"route",title:"波道路由",width:25},
-					{field:"wavelength",title:"波长编号",width:5},
-					{field:"neident",title:"网元标识",width:7},
-					{field:"port",title:"支路端口",width:15},
+					{field:"anode",title:"本端",width:13},
+					{field:"direction",title:"方向",width:13,editor:"text"},
+					{field:"znode",title:"对端",width:13,editor:"text"},
+					{field:"route",title:"波道路由",width:25,editor:"text"},
+					{field:"wavelength",title:"波长编号",width:10,editor:"text"},
+					{field:"neident",title:"网元标识",width:10,editor:"text"},
+					{field:"lineport",title:"线路端口",width:15,editor:"text"},
+					{field:"port",title:"支路端口",width:15,editor:"text"},
 					{field:"index",title:"电路编号",width:20,editor:"text"},
 					{field:"remark",title:"备注",width:25,editor:"text"}
 				]],
+		onDblClickRow: edit,
 		onRowContextMenu:function(e,index,row){
 			e.preventDefault(); //阻止浏览器捕获右键事件
 			$(this).datagrid("clearSelections"); //取消所有选中项
@@ -181,8 +185,8 @@ function createAndLoadResourceEdategrid(el,data){
                 top: e.pageY
             });
 		},
-		autoSave:'true',			//点击表格外时自动保存，注意是表格外
-		updateUrl:"/otn/update"		//跳转到jquery.edatagrid.js的55行onAfterEdit
+		// autoSave:'true',			//点击表格外时自动保存，注意是表格外
+		// updateUrl:"/otn/update",	//跳转到jquery.edatagrid.js的55行onAfterEdit
 		/*
 		onLoadSuccess:function(data){   //onLoadSuccess事件会在过滤器过滤后触发
 			if (tname!=$("input[name='jf_name']").val() || vendername!=$("input[name='vender_otn']").val()){
