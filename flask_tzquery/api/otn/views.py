@@ -1,9 +1,11 @@
 #-*-coding:utf8-*-
-import sys
+import sys, time
 import xlrd, xlwt
-from flask import g, request, jsonify, json, abort, current_app
+from xlutils.copy import copy
+from flask import g, request, jsonify, json, abort, current_app, make_response
 import pdb
 import MySQLdb
+import StringIO
 #from config import vender_file_dict, tablename_dict
 
 #sys.path.append("..")   #是为了使用上级目录的模块
@@ -37,18 +39,11 @@ def test():
 def before_request():
     try:
         vender = request.form['vender']
-        
-        if vender=="hw":
-            #workbook_path = r"D:\flask_env\波分端口台账\华为波分端口资源表格（最新）.xls".decode("utf8")  #相对路径
-            workbook_path = current_app.config['VENDER_FILE_DICT']["hw_port"]
-        elif vender=="fh3000":
-            #workbook_path = r"..\波分端口台账\烽火波分3000端口资源表格（最新）.xlsx".decode("utf8")
-            workbook_path = current_app.config['VENDER_FILE_DICT']["fh300_port"]
-        elif vender=="fh4000":
-            workbook_path = current_app.config['VENDER_FILE_DICT']["fh4000_port"]
-        elif vender=="zx":
-            workbook_path = current_app.config['VENDER_FILE_DICT']["zx_port"]    
-        g.wb = xlrd.open_workbook(workbook_path)
+        if vender in ["hw_port","zx_port","fh3000_port","fh4000_port"]:
+            workbook_path = current_app.config['VENDER_FILE_DICT'][vender]
+            g.wb = xlrd.open_workbook(workbook_path)
+        else:
+            pass
 
     except:
         username = current_app.config['USER']
@@ -58,12 +53,10 @@ def before_request():
 
 @bp.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
 def teardown_request(exception):
-    #pdb.set_trace()
     wb = getattr(g, 'wb', None)
     conn = getattr(g, 'conn', None)
     ws = getattr(g, 'ws', None)
     xlsApp = getattr(g, 'xlsApp', None)
-    #import pdb;pdb.set_trace()
 
     if wb is not None:
         #wb.close()     #待分析是否这样关闭
@@ -86,7 +79,7 @@ def tree():
     "nanguohuayuan":u"南国花园","nantianguangchang":u"南天广场","yuandong":u"远东","yuehao":u"越豪","zhongqiao":u"中侨","zhujiangguangchang":u"珠江广场","yuntai":u"蕴泰","jinfa":u"金发"}
     list_data = []
 
-    vender_db_list = [('fh300_port',u"烽火3000"),('hw_port',u"华为"),('fh4000_port',u"烽火4000"),('zx_port',u"中兴")]
+    vender_db_list = [('fh3000_port',u"烽火3000"),('hw_port',u"华为"),('fh4000_port',u"烽火4000"),('zx_port',u"中兴")]
 
     for vender_db,vender_name in vender_db_list:
         dict_data = {}
@@ -132,69 +125,142 @@ def dispatch():
                                                                                                       dest_route_data_structure.dbm,
                                                                                                       dest_route_data_structure.dkh,
                                                                                                       dest_route_data_structure.odf)
-    #pdb.set_trace()
     return route
 
 
-@bp.route('/port', methods=['GET','POST'])
+# @bp.route('/port', methods=['GET','POST'])
+@bp.route('/port', methods=['GET'])
 def otn_port():
     datas = []
-    field_names = ["no","anode","direction","znode","route","wavelength","neident","port","index","remark","lineport"]
-    if request.method=='GET':
-        dbname = request.args.get('vender_otn', '')
-        tablename = request.args.get('jf_name', '')
-        #wavelength = request.args.get('wavelength_val', "")
+    field_names = [ "no","anode","direction","znode","route","system","wavelength","neident","jijiano",
+                    "kuangno","port","boardname","portindex","linetype","index","odf","rtx",
+                    "remark","lineport"]   #顺序不能乱
+    dbname = request.args.get('vender_otn', '')
+    tablename = request.args.get('jf_name', '')
+    sql = u"""
+        select  序号, 
+                站点（本端落地）,
+                方向,
+                对端落地,
+                波道路由,
+                所属系统,
+                对应的高端系统时隙编号（波长编号）,
+                网元标识,
+                机架编号,
+                框编号,
+                槽号,
+                单板名称,
+                端口编号,
+                电路类型,
+                广州联通电路编号,
+                `端子号（DDF/ODF架号-子模块号-端子号）`,
+                `收/发`,
+                备注,
+                对应10G波长转换板
+        from %s.%s""" % (dbname,tablename)
 
-        g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注, 对应10G波长转换板 from %s.%s" % (dbname,tablename)) 
-        """
-        if wavelength !="":
-            g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注 from %s.%s where 对应的高端系统时隙编号（波长编号） like '_%s%%'" % (dbname,tablename,wavelength)) 
-        else:
-            g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注 from %s.%s" % (dbname,tablename)) 
-        """
-    else:
-        g.cursor.execute(u"select 序号, 站点（本端落地）, 方向, 对端落地, 波道路由, 对应的高端系统时隙编号（波长编号）, 机架编号, 槽号, 广州联通电路编号, 备注, 对应10G波长转换板 from fh300_port.750") 
-        
+    try:
+        g.cursor.execute(sql)
+    except Exception,e:
+        # pdb.set_trace()
+        print e
+        abort(400)
+       
     for row in g.cursor.fetchall(): #row是一个列值的tuple。((A1,B1,C1),(A2,B2,C2),(A3,B3,C3))
         data = dict(zip(field_names, row))
         datas.append(data)
     return json.dumps(datas)
 
 
-@bp.route('/update', methods=['POST']) #更新表格内容
+@bp.route('/export_dispatch_excel', methods=["POST"])
+def export_dispatch_excel():
+    rowindex = 1
+    content = json.loads(request.form["content"])
+    ISOTIMEFORMAT = "%y-%m-%d-%H_%M_%S"
+    lt = time.localtime()
+    ft = time.strftime(ISOTIMEFORMAT, lt)
+
+    file_path = current_app.config['DISPATCH_TEMPLATE']
+    rb = xlrd.open_workbook(file_path, formatting_info=True)
+    w = copy(rb)
+    wb = w.get_sheet(0)
+
+    for row in content:
+        for columnindex,data in enumerate(row):
+            wb.write(rowindex, columnindex, data)
+        rowindex += 1
+
+    sio = StringIO.StringIO()
+    w.save(sio)
+
+    rsp = make_response(sio.getvalue(),200)
+    rsp.headers["Content-type"] = "application/vnd.ms-excel"
+    rsp.headers["Transfer-Encoding"] = "chunked"
+    rsp.headers["Content-Disposition"] = "attachment;filename='%s.xls'" % ft
+    return rsp
+
+
+# 更新端口表格内容，包括excel
+@bp.route('/update', methods=['POST'])
 def update():
-    field_names = ["vender","tablename","no","anode","direction","znode","route","wavelength","neident","lineport","port","index","remark"]
-    values = map(lambda x:request.form[x], field_names)
-    excelName = current_app.config['VENDER_FILE_DICT'][request.form["vender"]] #得excel名
-    sheet = current_app.config['TABLENAME_DICT'][request.form["tablename"]]   #得表名
-    row_index = int(request.form["no"])    #得行号，强制转为int类型，得加1才行
-    anode = request.form["anode"]
-    direction = request.form["direction"]
-    znode = request.form["znode"]
-    route = request.form['route']
-    wavelength = request.form['wavelength']
-    neident = request.form['neident']
-    lineport = request.form['lineport']
-    port = request.form['port']
-    index = request.form["index"]       #电路编号
-    remark = request.form["remark"]     #备注
+    action = request.form["action"]
+    updatedata = json.loads(request.form["updatedata"])
+    
+    for data in updatedata:
+        db = data["vender"]
+        tablename = data["tablename"]
+        efile = current_app.config['VENDER_FILE_DICT'][db] #得excel名
+        sheet = current_app.config['TABLENAME_DICT'][tablename]   #得表名
+        rows = data["rows"]
+        updatedb(db, tablename, rows)
+        updateexcel(efile, sheet, rows)
+    
+    return "success"  #可以返回参数
 
-    sql = u"update %s.%s set 站点（本端落地）='%s',方向='%s',对端落地='%s',波道路由='%s',对应的高端系统时隙编号（波长编号）='%s',广州联通电路编号='%s',备注='%s' where 序号=%s" % tuple(values)
-    try:
-        g.cursor.execute(sql)   #得提交commit
-        g.conn.commit()
-        #存入excel
-        
-        #xlsApp = current_app.config['xlsApp']
-        g.xlsApp = xlsApp = excel_engine.init()
-        #g.ws = xlsApp.open(excelName, sheet, isDisplay=False)
-        xlsApp.open(excelName, sheet, isDisplay=False)
-        xlsApp.write(row_index+1, 15, index)   #15列为电路编号，17列为备注
-        xlsApp.write(row_index+1, 18, remark)   #18列为备注
+# 更新数据库
+def updatedb(db, tablename, rows):
+    field_names = [ "anode","direction","znode","route","system","wavelength","neident","jijiano",
+                    "kuangno","port","boardname","portindex","linetype","index","odf","rtx",
+                    "remark","lineport"]   #顺序不能乱
+    for row in rows:
+        values = map(lambda x:row[x], field_names)
+        values.append(row["no"])
+        values.insert(0, tablename)
+        values.insert(0, db)
+        sql =  u"""
+                update %s.%s
+                set 站点（本端落地）='%s',
+                    方向='%s',
+                    对端落地='%s',
+                    波道路由='%s',
+                    所属系统='%s',
+                    对应的高端系统时隙编号（波长编号）='%s',
+                    网元标识='%s',
+                    机架编号='%s',
+                    框编号='%s',
+                    槽号='%s',
+                    单板名称='%s',
+                    端口编号='%s',
+                    电路类型='%s',
+                    广州联通电路编号='%s',
+                    `端子号（DDF/ODF架号-子模块号-端子号）`='%s',
+                    `收/发`='%s',
+                    备注='%s',
+                    对应10G波长转换板='%s'
+                where 序号=%s""" % tuple(values)
+        g.cursor.execute(sql)
+    g.conn.commit()
 
-        #g.ws = excel.open(excelName, sheet, isDisplay=False)
-        
-    except:
-        abort(501)  #更新失败则返回错误代码
-    return sql  #可以返回参数
-
+# 更新excel
+def updateexcel(efile, sheet, rows):
+    field_names = [ "anode","direction","znode","route","system","wavelength","neident","jijiano",
+                    "kuangno","port","boardname","portindex","linetype","index","odf","rtx",
+                    "remark","lineport"]   #顺序不能乱
+    xlsApp = excel_engine.init()
+    xlsApp.open(efile, sheet, isDisplay=False)
+    for row in rows:    #再来个循环，更新xls数据
+        values = map(lambda x:row[x], field_names)  #逐行更新
+        row_index = row["no"]
+        for i,value in enumerate(values):   #从第二列开始更新
+            xlsApp.write(row_index+1, i+2, value)
+    xlsApp.close(isSave=True)   #保存并关闭wb

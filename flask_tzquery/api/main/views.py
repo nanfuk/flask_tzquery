@@ -37,6 +37,7 @@ def before_request():
     lt = time.localtime()
     time_format = "%Y-%m-%d %H:%M:%S"
     st = time.strftime(time_format, lt)
+    print u"开始时间:%s" % st
 
 @bp.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
 def teardown_request(exception):
@@ -95,12 +96,12 @@ def tzquery():
         entries.append(dict(rs=rs,tablename=tablename,counts=counts,hash=hashlib.md5(tablename.encode('gbk')).hexdigest()))
         sum += counts
     time2 = time.time()
-    print u"%s-->%s" % (searchword, area)
-    print u"查询时间:%.2f秒" % (time2-time1)
+    print u"查询时间:%.2f秒， %s：%s" % ((time2-time1), area, searchword)
+    # print u"查询时间:%.2f秒" % (time2-time1)
 
     if sum==0:
         return render_template("not_found.html")
-    elif sum>500:
+    elif sum>1000:
         return render_template("too_many.html",sum=sum)
     else:
         pattern = re.compile(r"\\")   #这个正则是给模板用的。

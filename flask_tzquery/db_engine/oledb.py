@@ -192,27 +192,31 @@ class accessdb():
 
     def search(self, strList, area):   #这是查询台账的关键函数
         if area == "01":
-            area = u"(\"其它\",\"波分台账\")"
+            area = u"(\"传输台账\",\"波分台账\")"
         elif area == "02":
-            area = u"(\"集团客户评价表\")"
+            area = u"(\"数据台账\")"
         elif area == "03":
             area = u"(\"波分台账\")"
         elif area == "04":
-            area = u"(\"其它\")"
+            area = u"(\"集团客户评价表\")"
         sql1 = u'select 新表名,字段连接 from tables_table left join files_table on \
                 tables_table.所属文件=files_table.文件名 where 分类 in %s order by 序号' % area
         rs1 = oledb.RsExecute(self.conn, sql1)
 
         while not rs1.EOF:
-            tablename = rs1.Fields.Item(u'新表名').Value
-            addstring = rs1.Fields.Item(u'字段连接').Value
+            tablename = rs1.Fields.Item(u'新表名').value   #tablename
+            addstring = rs1.Fields.Item(u'字段连接').Value  #addstring为None会出错
+
+            if addstring==("" or None):     #如果字段连接为空则跳过这个表的查询
+                rs1.MoveNext()
+                continue
+
             sql2 = ""
             for str in strList:
                 sql2 += ' and (%s like "%%%s%%")' % (addstring, str)
             sql2 = sql2.lstrip(" and")
             sql3 = u'select * from [%s] where ' % (tablename) + sql2
-            #sql2 = u'select * from [%s] where (%s like "%%%s%%") and (%s like "%%太阳城%%")' % (tablename, addstring, str, addstring)
-            #pdb.set_trace()
+            
             rs2 = oledb.RsExecute(self.conn, sql3)
             
             if rs2.EOF==False:
