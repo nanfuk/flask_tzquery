@@ -10,13 +10,7 @@ import re
 import StringIO
 import xlwt
 import hashlib
-<<<<<<< HEAD:flask_tzquery/api/main/views.py
 import logging
-=======
-from urllib import unquote   #实现url解码
-#from flask_access import sess_interface, app
-from functools import wraps
->>>>>>> dev_2:main/main_blueprint.py
 
 from urllib import unquote   #实现url解码
 
@@ -26,7 +20,6 @@ from .other import preKey, resumeKey
 #from ...oledb import accessdb
 from ...db_engine.oledb import accessdb
 
-<<<<<<< HEAD:flask_tzquery/api/main/views.py
 #main_blueprint = Blueprint("main_blueprint", __name__)
 """
 def preKey(str):      #对关键字进行预处理
@@ -39,34 +32,6 @@ def preKey(str):      #对关键字进行预处理
 
     return str.split('*')   #返回的是一个列表
 """
-=======
-# def preKey(str):      #对关键字进行预处理
-#     str = str.strip()
-
-#     pattern = re.compile("%")
-#     str = pattern.sub("%%", str)
-#     pattern = re.compile(r"\[")   #①r表示字符串的'\'不需转义。②但'['不能直接compile，需要'\'转义才能compile
-#     str = pattern.sub("%[", str)
-
-#     return str.split('*')   #返回的是一个列表
-
-def checkQueryStr(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        searchword = request.args.get('key', '').strip("* ")
-        if len(searchword)>=100:
-            return u"查询关键字过多！"
-        elif len(searchword)<=1:
-            return u"查询关键字过少！"
-        pattern = re.compile("%")
-        searchword = pattern.sub("%%", searchword)
-        pattern = re.compile(r"\[")   #①r表示字符串的'\'不需转义。②但'['不能直接compile，需要'\'转义才能compile
-        searchword = pattern.sub("%[", searchword)
-
-        g.keyList = searchword.split("*")
-        return f(*args, **kwargs)
-    return decorated_function
->>>>>>> dev_2:main/main_blueprint.py
 
 logger = logging.getLogger('Main')
 
@@ -89,15 +54,9 @@ def entry():
     updatetime = "xxxx"
     return render_template("entry.html",updatetime=updatetime)
 
-<<<<<<< HEAD:flask_tzquery/api/main/views.py
 @bp.route('tzquery', methods=['GET','POST'])
 def tzquery():
     
-=======
-@main_blueprint.route('/tzquery')
-@checkQueryStr
-def tzquery():
->>>>>>> dev_2:main/main_blueprint.py
     time1 = time.time()
     if current_app.session_interface.judge_attack(current_app, request):
         session["time"] = time1
@@ -108,27 +67,19 @@ def tzquery():
     session["time"] = time1
 
     current_app.session_interface.save_session_without_response(current_app, session)
-<<<<<<< HEAD:flask_tzquery/api/main/views.py
 
-=======
->>>>>>> dev_2:main/main_blueprint.py
     #if request.remote_addr == "10.117.194.222": #黑名单
     #    return(u"-_-!!")
 
     searchword = request.args.get('key', '')    #根据网页的设置编码来得出的是Unicode编码
-    keyList = g.keyList
     area = request.args.get('area', '')
     version = request.args.get("version", '')
 
     if version!="1.0":
         return(u"主页已更新，请刷新主页。")
 
-<<<<<<< HEAD:flask_tzquery/api/main/views.py
     searchwordList = searchword.split("*")
     keyList = preKey(searchwordList)    # 预处理字符串，传给数据库查询
-=======
-    # keyList = preKey(searchword)
->>>>>>> dev_2:main/main_blueprint.py
     rs_generator = g.db.search(keyList, area)    #返回的是一个迭代器，调用next()来获取数据
     
     sum = 0
@@ -161,12 +112,8 @@ def tzquery():
         return render_template("too_many.html",sum=sum)
     else:
         pattern = re.compile(r"\\")   #这个正则是给模板用的。
-<<<<<<< HEAD:flask_tzquery/api/main/views.py
         searchword = pattern.sub(r"\\\\",searchword)  #模板中是继承g的,尝试改下
         #return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
-=======
-        searchword = pattern.sub(r"\\\\", searchword)
->>>>>>> dev_2:main/main_blueprint.py
         return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
         # return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList), area=area)
         #keys为关键字数目，因为在模板中无法使用len方法

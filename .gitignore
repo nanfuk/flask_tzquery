@@ -1,6 +1,4 @@
-<<<<<<< HEAD
-﻿*.accdb
-*.laccdb
+﻿*.laccdb
 *.pyc
 *.bat
 *.mdb
@@ -8,17 +6,6 @@
 *.ipynb
 *.config
 *.log
-=======
-﻿#过滤数据库文件、python编译文件
-*.accdb
-*.mdb
-*.laccdb
-*.pyc
-*.bat
-*.xap
-*.ldb
-.gitignore
->>>>>>> dev_2
 
 /session/
 /test/
