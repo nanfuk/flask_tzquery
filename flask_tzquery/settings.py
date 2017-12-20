@@ -4,10 +4,18 @@
 调用时使用:app.config['DATABASE']
 """
 import os,sys
+import logging
 
-DEBUG = True
+DEBUG = None    #Flask-Script额外库使用的配置文件
 SECRET_KEY = "Spe.22"
 PATH = u"D:\\Softwares\\flask_env\\flask_tzquery"
+
+LOGCONFIG = "logging.conf"  #Flask-LogConfig额外库使用的配置文件，可以是dict或文件路径
+LOGCONFIG_QUEUE = ['Main','Manager','OTN','otn_ring']
+LOGCONFIG_REQUESTS_ENABLED = True
+LOGCONFIG_REQUESTS_LOGGER = 'flaskLog'
+LOGCONFIG_REQUESTS_LEVEL = logging.INFO
+
 
 """
 MySQL参数
@@ -40,3 +48,16 @@ TABLENAME_DICT = {'750':u'750','baiyunting':u'白云厅','danan':u'大南', 'gan
     "nanguohuayuan":u"南国花园","nantianguangchang":u"南天广场","yuandong":u"远东","yuehao":u"越豪","zhongqiao":u"中侨","zhujiangguangchang":u"珠江广场","yuntai":u"蕴泰","jinfa":u"金发"}
 
 DISPATCH_TEMPLATE = u"D:\\Softwares\\flask_env\\波分端口台账\\波分资源分配模板.xls"
+
+
+# class ExceptionHook:
+#     instance = None
+#
+#     def __call__(self, *args, **kwargs):
+#         if self.instance is None:
+#             from IPython.core import ultratb
+#             self.instance = ultratb.FormattedTB(mode='Plain',
+#                  color_scheme='Linux', call_pdb=1)
+#         return self.instance(*args, **kwargs)
+#
+# sys.excepthook = ExceptionHook()

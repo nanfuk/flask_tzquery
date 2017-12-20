@@ -3,9 +3,12 @@ import sys, time
 import xlrd, xlwt
 from xlutils.copy import copy
 from flask import g, request, jsonify, json, abort, current_app, make_response
-import pdb
+
+ 
+
+
 import MySQLdb
-import StringIO
+import StringIO, re
 #from config import vender_file_dict, tablename_dict
 
 #sys.path.append("..")   #是为了使用上级目录的模块
@@ -48,7 +51,7 @@ def before_request():
     except:
         username = current_app.config['USER']
         passwd = current_app.config['PWD']
-        g.conn = MySQLdb.connect(host="127.0.0.1",user=username,passwd=passwd,charset='gbk') 
+        g.conn = MySQLdb.connect(host="127.0.0.1",user=username,passwd=passwd,charset='utf8') 
         g.cursor = g.conn.cursor()
 
 @bp.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
@@ -217,6 +220,7 @@ def update():
     
     return "success"  #可以返回参数
 
+
 # 更新数据库
 def updatedb(db, tablename, rows):
     field_names = [ "anode","direction","znode","route","system","wavelength","neident","jijiano",
@@ -264,3 +268,4 @@ def updateexcel(efile, sheet, rows):
         for i,value in enumerate(values):   #从第二列开始更新
             xlsApp.write(row_index+1, i+2, value)
     xlsApp.close(isSave=True)   #保存并关闭wb
+

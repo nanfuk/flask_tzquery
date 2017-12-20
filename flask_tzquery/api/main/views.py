@@ -10,11 +10,12 @@ import re
 import StringIO
 import xlwt
 import hashlib
+import logging
 
 from urllib import unquote   #实现url解码
 
 from . import bp
-from .other import preKey
+from .other import preKey, resumeKey
 #from ...odbc import accessdb
 #from ...oledb import accessdb
 from ...db_engine.oledb import accessdb
@@ -31,13 +32,14 @@ def preKey(str):      #对关键字进行预处理
 
     return str.split('*')   #返回的是一个列表
 """
+
+logger = logging.getLogger('Main')
+
 @bp.before_request      #表示在请求页面之前先连接好数据库
 def before_request():
     g.db = accessdb(current_app.config['DATABASE']) #返回的是一个类实例
-    lt = time.localtime()
-    time_format = "%Y-%m-%d %H:%M:%S"
-    st = time.strftime(time_format, lt)
-    print u"开始时间:%s" % st
+    # a = 0/0
+    # g.st = time.strftime("%H:%M:%S", time.localtime())
 
 @bp.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
 def teardown_request(exception):
@@ -59,6 +61,7 @@ def tzquery():
     if current_app.session_interface.judge_attack(current_app, request):
         session["time"] = time1
         current_app.session_interface.save_session_without_response(current_app, session)
+        logger.warn(u"%s 访问频繁", request.remote_addr)
         return u"访问太频繁！3秒后再查询~.~"
 
     session["time"] = time1
@@ -75,7 +78,8 @@ def tzquery():
     if version!="1.0":
         return(u"主页已更新，请刷新主页。")
 
-    keyList = preKey(searchword)
+    searchwordList = searchword.split("*")
+    keyList = preKey(searchwordList)    # 预处理字符串，传给数据库查询
     rs_generator = g.db.search(keyList, area)    #返回的是一个迭代器，调用next()来获取数据
     
     sum = 0
@@ -96,8 +100,11 @@ def tzquery():
         entries.append(dict(rs=rs,tablename=tablename,counts=counts,hash=hashlib.md5(tablename.encode('gbk')).hexdigest()))
         sum += counts
     time2 = time.time()
-    print u"查询时间:%.2f秒， %s：%s" % ((time2-time1), area, searchword)
+    # print u"查询时间:%.2f秒， %s：%s" % ((time2-time1), area, searchword)
     # print u"查询时间:%.2f秒" % (time2-time1)
+    logger.info(u"%s %s->%s 时间:%.2fs，", request.remote_addr, area, searchword, time2-time1)
+
+    keyList = resumeKey(keyList)     # 把给数据库的字符串还原为网页能识别高亮显示的字符
 
     if sum==0:
         return render_template("not_found.html")
@@ -108,6 +115,7 @@ def tzquery():
         searchword = pattern.sub(r"\\\\",searchword)  #模板中是继承g的,尝试改下
         #return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
         return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
+        # return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList), area=area)
         #keys为关键字数目，因为在模板中无法使用len方法
     """
     #以下为easyui通过ajax加载表格来提升访问速度的代码
@@ -132,7 +140,6 @@ def tzquery():
 def export_xls():
     searchword = request.args.get('key', '')
     keyList = preKey(searchword)
-    #pdb.set_trace()
     area = request.args.get("area", "") 
 
     rs_generator = g.db.search(keyList, area)
@@ -144,7 +151,7 @@ def export_xls():
     ISOTIMEFORMAT = '%H_%M_%S'
     ft = time.strftime(ISOTIMEFORMAT, lt)
 
-    pattern = re.compile(r".*___")
+    pattern = re.compile(r".*__")
 
     for rs,tablename in rs_generator: 
         row = 0

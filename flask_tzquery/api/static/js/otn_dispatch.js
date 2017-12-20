@@ -54,6 +54,53 @@ $(document).ready(function(){
         //autoSave:'true',          //点击表格外时自动保存，注意是表格外
         //saveUrl:"/otn/save",
         //updateUrl:"/otn/save"
+        view:detailview,
+        detailFormatter: function(rowIndex, rowData){
+            return '<div style="padding:2px"><table style="height:150px" id="ddv-' + rowIndex + '"></table></div>'
+        },
+        onExpandRow:function(rowIndex, rowData){
+            $.data(document.body, "dgTableRowIndex", rowIndex);
+            $('#ddv-'+rowIndex).datagrid({
+                url:'/otn/getWaves',
+                queryParams:{ring_index:rowData.ring_index, nodes:rowData.node},
+                columns:[[
+                            {field:"index",title:"编号"},
+                            {field:"link",title:"对接方向"},
+                            {
+                                field:"nums",
+                                title:"波道数量",
+                                formatter: function(value,row,index){
+                                    var content = [
+                                        '<a data-dgtablerowindex=',$.data(document.body, "dgTableRowIndex"),
+                                        ' data-ddvtablerowindex=',index,
+                                        ' onClick="popDetailRoute(this)">',
+                                        value,
+                                        '</a>'
+                                        ]
+                                    return content.join("")
+                                }
+                            }
+                        ]],
+            });
+            
+        }
+    });
+
+    $("#disDetailRouteTable").datagrid({
+        remoteSort:false,   // 默认是true，必须设为false才能在本地列排序
+        // title:"详细波道信息",
+        columns:[[
+                {field:'route',title:"路由信息"},
+                {
+                    field:'wl',
+                    title:'占用波道',
+                    // width:100,
+                    sortable:true,
+                    sorter:function(a,b){
+                        return parseInt(a)>parseInt(b)?1:-1
+                    }
+                },
+            ]],
     });
 
     $("#otn_resource_tabs").tabs({  //tabs构建
@@ -65,8 +112,26 @@ $(document).ready(function(){
                 var id = tableObject[0].id;
                 $.data(document.body, "db_table", [id,title])
             }
+        },
+        onContextMenu:function(e,title,index){
+            e.preventDefault(); //阻止浏览器捕获右键事件
+            var tab_title_array = new Array();
+            var tabs = $("#otn_resource_tabs").tabs('tabs');
+            for (var i = 0; i < tabs.length; i++) {
+                var tab_title = tabs[i].panel('options')['title'];
+                if (tab_title!=title && tab_title!="路由显示"){
+                    tab_title_array.push(tab_title)
+                }
+            }
+            $("#otn_resource_tabs_contextmenu").data("tab_title",{"selected":title,"unselected":tab_title_array}); //把tab_title字典存入右键菜单的缓存
+            $('#otn_resource_tabs_contextmenu').menu('show', {
+                //显示右键菜单
+                left: e.pageX,//在鼠标点击处显示菜单
+                top: e.pageY
+            });
         }
     });
+
 
 
     $("#jf_list").combotree({
@@ -133,7 +198,7 @@ $(document).ready(function(){
                     {field:"remark",title:"备注",width:10,editor:"textarea"},
         ]],
         editorHeight: 96,   //设置编辑器的高度
-        onRowContextMenu:function(e,index,row){
+        onRowContextMenu:function(e,index,row){ //datagrid中的右键事件
             e.preventDefault(); //阻止浏览器捕获右键事件
             $(this).datagrid("clearSelections"); //取消所有选中项
             $(this).datagrid("selectRow", index); //根据索引选中该行
@@ -168,6 +233,17 @@ $(document).ready(function(){
         modifyrecord($.cookie("searchrecord3"));
     }
 });
+
+
+function popDetailRoute(el){
+    var dgTableRowIndex = $(el).data("dgtablerowindex");
+    var ddvTableRowIndex = $(el).data("ddvtablerowindex");
+    var content = $("#ddv-"+dgTableRowIndex).datagrid('getData').rows[ddvTableRowIndex].content
+    $("#disDetailRouteTable").datagrid('loadData',content);
+    $("#disDetailRouteWin").window('open');
+}
+
+
 
 // 生成端口表
 function generatePortDg(id,data){
@@ -213,7 +289,7 @@ function generatePortDg(id,data){
                     {field:"odf",title:"ODF",width:5,editor:"text",hidden:true}
                 ]],
         onDblClickRow: edit,
-        onRowContextMenu:function(e,index,row){
+        onRowContextMenu:function(e,index,row){ //datagrid页面中右键触发，不是tab标题
             e.preventDefault(); //阻止浏览器捕获右键事件
             $(this).datagrid("clearSelections"); //取消所有选中项
             $(this).datagrid("selectRow", index); //根据索引选中该行
@@ -277,6 +353,25 @@ function refreshPortDg(vender, jfname){
         }
     });
 }
+
+// 端口表Tab选项卡右键菜单
+$("#otn_resource_tabs_contextmenu").menu({
+    onClick:function(item){
+        if(item.id=="otn_resource_tabs_contextmenu_refresh"){
+            alert("刷新");
+        }
+        else if(item.id=="otn_resource_tabs_contextmenu_closeother"){
+            var unselected_tab_title_array = $(this).data("tab_title")["unselected"];
+            var selected_tab_title = $(this).data("tab_title")["selected"];
+            var $otn_resource_tabs = $("#otn_resource_tabs");
+            alert(unselected_tab_title_array);
+            for(var i=unselected_tab_title_array.length-1;i>=0;i--){
+                var tab = $otn_resource_tabs.tabs("close",unselected_tab_title_array[i]);
+            }
+            $otn_resource_tabs.tabs('select',selected_tab_title);
+        }  
+    }
+})
 
 // 端口表右键菜单
 $("#tab1_port_table_menu").menu({
@@ -346,7 +441,13 @@ $("#tab1_dispatch_table_menu").menu({
 // 弹出资源分配框
 $("#dispatchDialog").dialog({"onBeforeOpen":function(){
     var route = $("#output-box").textbox("getText");
-    var remark = $.data(document.body,"source")["rows"][0]["remark"];
+    var source = $.data(document.body,"source");
+    if(source&&route){
+        var remark = source["rows"][0]["remark"];
+    }else{
+        alert('还未指定路由！');
+        return false
+    }
     $("#dispatchRoute").textbox("setText",route);
     $("#remarkInfo1").textbox("setText",remark);
     return true
@@ -376,6 +477,7 @@ function DownLoadFile(options){
 
 // 提交表单，查询路由资料
 function submitForm(){
+    $("#cc").showLoading();
     $('#ff').form('submit',{
         url:'otn/dispatch',
         onSubmit:function(){
@@ -383,6 +485,7 @@ function submitForm(){
         },
         success:function(data){
             $('#output-box').textbox('setText',data);   //资源分配的输出框
+            $("#cc").hideLoading();
         }
     });
 }
@@ -393,7 +496,12 @@ function confirmDispatch(){
     var index = $("#circuitName").textbox("getText");
     var remark1 = $("#remarkInfo1").textbox("getText");
     var remark2 = $("#remarkInfo2").textbox("getText");
-    var remark = remark1+";"+remark2;
+    if(remark1){
+        var remark = remark1+";"+remark2;
+    }else{
+        var remark = remark2;
+    }
+    
     var AInfo = $("#AInfo").textbox("getText");
     var ZInfo = $("#ZInfo").textbox("getText");
     var route = AInfo + $("#dispatchRoute").textbox("getText") + ZInfo;
@@ -496,7 +604,10 @@ function save(){
         rows = tableObject.datagrid('getChanges');
         if(rows.length>0){
             tableObject.datagrid('acceptChanges');
-            alert(rows.length+' rows are changed!');
+            // alert(rows.length+' rows are changed!');
+            if(confirm(rows.length+' rows are changed!')){
+                $("#cc").showLoading();
+            }else{return;}
         } else {
             alert('还未编辑');
             return;
@@ -513,10 +624,16 @@ function save(){
         type: "POST",
         success: function(returnData) {
             if(returnData=="success"){
+                $("#cc").hideLoading();
                 alert("更新成功");
             } else {
+                $("#cc").hideLoading();
                 alert("更新失败");
             }
+        },
+        error:function(){
+            $("#cc").hideLoading();
+            alert("更新失败");
         }
     });
 }

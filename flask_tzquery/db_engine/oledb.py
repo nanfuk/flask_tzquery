@@ -203,6 +203,8 @@ class accessdb():
                 tables_table.所属文件=files_table.文件名 where 分类 in %s order by 序号' % area
         rs1 = oledb.RsExecute(self.conn, sql1)
 
+        # p = re.compile(r"[\]\[\%]")     #用于转义[,],%这些access混淆的符号
+
         while not rs1.EOF:
             tablename = rs1.Fields.Item(u'新表名').value   #tablename
             addstring = rs1.Fields.Item(u'字段连接').Value  #addstring为None会出错
