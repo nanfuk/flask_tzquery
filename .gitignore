@@ -1,0 +1,12 @@
+﻿*.accdb
+*.laccdb
+*.pyc
+*.bat
+*.mdb
+*.ldb
+*.ipynb
+*.config
+*.log
+
+/session/
+/test/
