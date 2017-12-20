@@ -22,13 +22,13 @@ class accessdb():
 
     def search_by_table_index(self, strList, area, index):
         if area == "01":
-            area = u"('其它','波分台账')"
+            area = u"('传输台账','波分台账')"
         elif area == "02":
-            area = u"('集团客户评价表')"
+            area = u"('数据台账')"
         elif area == "03":
             area = u"('波分台账')"
         elif area == "04":
-            area = u"('其它')"
+            area = u"('集团客户评价表')"
 
         sql1 = u"select 新表名,字段连接,序号 from tables_table left join files_table on \
                 tables_table.所属文件=files_table.文件名 where 分类 in %s and tables_table.序号> %d order by 序号" % (area,index)
