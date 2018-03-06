@@ -1,7 +1,7 @@
 #-*-coding:utf8-*-
 #import win32com.client
 #from oledb import connect_accessdb
-from flask import g, render_template, request, make_response, session, redirect, url_for, current_app
+from flask import abort, g, render_template, request, make_response, session, redirect, url_for, current_app
 import pdb
 import json
 import time
@@ -11,6 +11,8 @@ import StringIO
 import xlwt
 import hashlib
 import logging
+
+import redis_component
 
 from urllib import unquote   #实现url解码
 
@@ -33,19 +35,19 @@ def preKey(str):      #对关键字进行预处理
     return str.split('*')   #返回的是一个列表
 """
 
-logger = logging.getLogger('Main')
+logger = logging.getLogger('tzquery')
 
-@bp.before_request      #表示在请求页面之前先连接好数据库
-def before_request():
-    g.db = accessdb(current_app.config['DATABASE']) #返回的是一个类实例
+# @bp.before_request      #表示在请求页面之前先连接好数据库
+# def before_request():
+    # g.db = accessdb(current_app.config['DATABASE']) #返回的是一个类实例
     # a = 0/0
     # g.st = time.strftime("%H:%M:%S", time.localtime())
 
-@bp.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
-def teardown_request(exception):
-    db = getattr(g, 'db', None)
-    if db is not None:
-        db.close()
+# @bp.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
+# def teardown_request(exception):
+    # db = getattr(g, 'db', None)
+    # if db is not None:
+        # db.close()
 
 @bp.route('/')
 def entry():
@@ -54,36 +56,36 @@ def entry():
     updatetime = "xxxx"
     return render_template("entry.html",updatetime=updatetime)
 
-@bp.route('tzquery', methods=['GET','POST'])
+@bp.route('tzquery', methods=['GET'])
 def tzquery():
     
-    time1 = time.time()
-    if current_app.session_interface.judge_attack(current_app, request):
-        session["time"] = time1
-        current_app.session_interface.save_session_without_response(current_app, session)
-        logger.warn(u"%s 访问频繁", request.remote_addr)
-        return u"访问太频繁！3秒后再查询~.~"
+    # time1 = time.time()
+    # if current_app.session_interface.judge_attack(current_app, request):
+    #     session["time"] = time1
+    #     current_app.session_interface.save_session_without_response(current_app, session)
+    #     logger.warn(u"%s 访问频繁", request.remote_addr)
+    #     return u"访问太频繁！3秒后再查询~.~"
 
-    session["time"] = time1
+    # session["time"] = time1
 
-    current_app.session_interface.save_session_without_response(current_app, session)
+    # current_app.session_interface.save_session_without_response(current_app, session)
 
-    #if request.remote_addr == "10.117.194.222": #黑名单
-    #    return(u"-_-!!")
-
+    # #if request.remote_addr == "10.117.194.222": #黑名单
+    # #    return(u"-_-!!")
     searchword = request.args.get('key', '')    #根据网页的设置编码来得出的是Unicode编码
+    # searchword = "*".join([i.strip(" ") for i in searchword.split("*")])    #去除空格,ToDo前端来做
     area = request.args.get('area', '')
     version = request.args.get("version", '')
 
-    if version!="1.0":
-        return(u"主页已更新，请刷新主页。")
+    # if version!="1.0":
+    #     return(u"主页已更新，请刷新主页。")
 
-    searchwordList = searchword.split("*")
-    keyList = preKey(searchwordList)    # 预处理字符串，传给数据库查询
-    rs_generator = g.db.search(keyList, area)    #返回的是一个迭代器，调用next()来获取数据
+    # searchwordList = searchword.split("*")
+    # keyList = preKey(searchwordList)    # 预处理字符串，传给数据库查询
+    # # rs_generator = g.db.search(keyList, area)    #返回的是一个迭代器，调用next()来获取数据
     
-    sum = 0
-    entries = []
+    # sum = 0
+    # entries = []
     """
     #以下为easyui的展示方式
     fields_A_to_Z = [chr(x) for x in range(65,91)]
@@ -94,27 +96,28 @@ def tzquery():
             entries.append(dict(rs=rs,tablename=tablename,columns=columns))
         sum += counts
     """
-    for rs,tablename in rs_generator:        
-        counts=rs.RecordCount
-        #pdb.set_trace()
-        entries.append(dict(rs=rs,tablename=tablename,counts=counts,hash=hashlib.md5(tablename.encode('gbk')).hexdigest()))
-        sum += counts
-    time2 = time.time()
-    # print u"查询时间:%.2f秒， %s：%s" % ((time2-time1), area, searchword)
-    # print u"查询时间:%.2f秒" % (time2-time1)
-    logger.info(u"%s %s->%s 时间:%.2fs，", request.remote_addr, area, searchword, time2-time1)
+    # for rs,tablename in rs_generator:        
+        # counts=rs.RecordCount
+        # entries.append(dict(rs=rs,tablename=tablename,counts=counts,hash=hashlib.md5(tablename.encode('gbk')).hexdigest()))
+        # sum += counts
+    # tablename = "test"
+    # records = redis_component.query(keyList[0])
 
-    keyList = resumeKey(keyList)     # 把给数据库的字符串还原为网页能识别高亮显示的字符
 
-    if sum==0:
-        return render_template("not_found.html")
-    elif sum>1000:
-        return render_template("too_many.html",sum=sum)
-    else:
-        pattern = re.compile(r"\\")   #这个正则是给模板用的。
-        searchword = pattern.sub(r"\\\\",searchword)  #模板中是继承g的,尝试改下
-        #return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
-        return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
+    # time2 = time.time()
+    # logger.info(u"%s %s->%s 时间:%.2fs，", request.remote_addr, area, searchword, time2-time1)
+
+    # keyList = resumeKey(keyList)     # 把给数据库的字符串还原为网页能识别高亮显示的字符
+    return render_template('show_entries.html', searchword=searchword, area=area)
+    # if sum==0:
+    #     return render_template("not_found.html")
+    # elif sum>1000:
+    #     return render_template("too_many.html",sum=sum)
+    # else:
+    #     pattern = re.compile(r"\\")   #这个正则是给模板用的。
+    #     searchword = pattern.sub(r"\\\\",searchword)  #模板中是继承g的,尝试改下
+    #     #return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
+    #     return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
         # return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList), area=area)
         #keys为关键字数目，因为在模板中无法使用len方法
     """
@@ -135,6 +138,29 @@ def tzquery():
     json_content = g.db.search_by_table_index(keyList, area, index) #这得返回json值
     return json_content
     """
+
+@bp.route('getQueryResult', methods=['POST'])
+def getQueryResult():
+    start = time.time()
+    # import pdb;pdb.set_trace()
+    keywords = request.form.get("keywords")
+    area = request.form.get("area")
+    if "keywords" and "area":
+        keywords = json.loads(keywords)
+        if "" in keywords:
+            abort(500)
+        try:
+            keywords = [i.encode('utf8') for i in keywords] # 传过来的是Unicode，转为utf8传给redis
+        except:
+            abort(500)
+        end = time.time()
+        records = redis_component.query(area, keywords)
+        
+        logger.info(u"%s    关键字:%s    用时:%.2f" % (request.remote_addr, request.form.get("keywords"), end-start))
+        
+        return json.dumps(records,ensure_ascii=False)
+    abort(500)    #ToDo
+
 
 @bp.route('/export')
 def export_xls():
@@ -227,3 +253,78 @@ def clients_name():
 @bp.route('/test')
 def test():
     return render_template('SilverlightApplication7TestPage.html')
+
+@bp.route("managedb", methods=["GET","POST"])
+def managedb():
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "add": # 新增excel
+            classified = request.form.get("classified")
+            if classified:
+                for k, v in request.files.items():
+                    file = request.files[k]
+                    updateTime = str(time.time()) # 传入字符串，不能是浮点数
+                    lastModified = request.form.get("lastModified"+k,"")
+                    size = request.form.get("size"+k,"")
+                    
+                    f = StringIO.StringIO()
+                    f.write(file.read())
+
+                    redis_component.importMemoryExcel(
+                        f               = f,
+                        filename        = file.filename,
+                        classified      = classified,
+                        updateTime      = updateTime,
+                        lastModified    = lastModified,
+                        size            = size
+                    )
+                    f.close()
+                return "add success"
+            return "add error"
+
+        elif action == "del": # 删除excel
+            wbIndexList = request.form.getlist("wbIndexList[]")
+            if wbIndexList:
+                for wbIndex in wbIndexList:
+                    redis_component.delWbInRedis(wbIndex)
+                return "del success"
+            return "del error"
+
+    # 通过get请求得到工作簿列表
+    fileDict = redis_component.getFileNameDict()
+    data = []
+    for k,v in fileDict.items():    # utf8编码的内容
+        wbName          = v.get("wbName","")
+        updateTime      = v.get("updateTime","")
+        lastModified    = v.get("lastModified","")
+        size            = v.get("size","")
+        try:
+            updateTime = time.strftime("%y-%m-%d %H:%M",time.localtime(float(updateTime)))
+        except:
+            pass
+
+        try:
+            lastModified = time.strftime("%y-%m-%d %H:%M",time.localtime(float(lastModified)/1000))
+        except:
+            pass
+
+        try:
+            size = float(size)
+            if size < 1024:
+                size = "%d B" % size
+            elif size < 1024*1024:
+                size = "%d KB" % round(size/1024)
+            else:
+                size = "%.2f MB" % round(size/(1024*1024), 2)
+        except:
+            pass
+
+        data.append({
+            "wbIndex":k,
+            "wbName":wbName,
+            "size":size,
+            "updateTime":updateTime,
+            "lastModified":lastModified
+        })
+    return json.dumps(data)

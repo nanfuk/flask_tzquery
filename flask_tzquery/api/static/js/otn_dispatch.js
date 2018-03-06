@@ -1,7 +1,118 @@
-var tname = undefined;
-var vendername = undefined;
+// var tname = undefined;
+// var vendername = undefined;
+
+$("#otnDispatchTab").data("portTabs", {});
 
 $(document).ready(function(){
+    
+    $("#tzqueryUpdateTable").datagrid({
+        columns:[[
+            {field:"cb", checkbox:true},
+            {field:"wbName", title:"文件名", width:200},
+            {field:"updateTime", title:"导入时间", width:90},
+            {field:"lastModified", title:"修改时间", width:90},
+            {field:"size", title:"文件大小", width:60},
+            {field:"wbIndex", title:"专业分类", width:60}
+        ]],
+        url:"/managedb",
+        method:"get",
+        toolbar:"#tzqueryUpdateTableToolBar",
+        rownumbers:true,
+        fit:true
+    });
+
+    $("#tzqueryUpdateTableToolBar > #addWb").linkbutton({
+        onClick:function(){
+            $('#tzqueryUpdateDlg').dialog('open')
+        }
+    });
+
+    $("#tzqueryUpdateTableToolBar > #delWb").linkbutton({
+        onClick:function(){
+            var checkedRows = $("#tzqueryUpdateTable").datagrid("getChecked");
+            var wbIndexList = [];
+            $.each(checkedRows, function(i){
+                wbIndexList.push(checkedRows[i].wbIndex);
+            });
+            $.ajax({
+                url:"/managedb",
+                method:"post",
+                data:{action:"del",wbIndexList:wbIndexList},
+                success:function(returndata){
+                    $("#tzqueryUpdateTable").datagrid("reload");
+                },
+                error:function(returndata){
+                    alert(returndata);
+                }
+            });
+        }
+    });
+
+    $("#tzqueryUpdateTableToolBar > #reloadWb").linkbutton({
+        onClick:function(){
+            $("#tzqueryUpdateTable").datagrid("reload");
+        }
+    });
+
+    $("#tzqueryUpdateDlg").dialog({
+        title:"导入更新",
+        width:500,
+        height:500,
+        closed:true,
+        modal:true
+    });
+
+    $("#tzqueryUpdateForm").form({
+        url:"managedb",
+    });
+
+    $("#tzqueryUpdateForm > input").filebox({
+        multiple:true,
+        accept:"xls",
+        buttonText:"选择文件",
+        buttonAlign:"left"
+    });
+
+    $("#tzqueryUpdateForm > select").combo({
+        required:true,
+        editable:false
+    });
+    $("#classifiedSelectOption").appendTo($("#tzqueryUpdateForm > select").combo("panel"));
+    $("#classifiedSelectOption input").click(function(){
+        var v = $(this).val();
+        var s = $(this).next("span").text();
+        $("#tzqueryUpdateForm > select").combo("setValue", v).combo("setText", s).combo("hidePanel");
+    });
+
+    $("#tzqueryUpdateForm > .easyui-linkbutton").linkbutton({
+        iconCls: "icon-ok",
+        onClick:function(){
+            var formData = new FormData();
+            var files = $("#tzqueryUpdateForm > input").filebox("files"); // 更新到1.5.4才有的方法
+            $.each(files, function(i){
+                formData.append(i, files[i]);
+                formData.append("lastModified"+i,files[i]["lastModified"]);
+                formData.append("size"+i,files[i]["size"]);
+            });
+            var classified = $("#tzqueryUpdateForm > select").combo("getValue");
+            formData.append("classified", classified);
+            formData.append("action", "add");
+            $.ajax({
+                url:"managedb",
+                type:"POST",
+                data:formData,
+                contentType:false,
+                processData:false,
+                success:function(returndata){
+                    $("#tzqueryUpdateTable").datagrid("reload");
+                },
+                error:function(returndata){
+                    alert(returndata);
+                }
+            });
+        }
+    });
+
     $("#tab-tools").tabs({          //生成选项卡
         tabPosition:"left",
         fit:"true"
@@ -164,7 +275,7 @@ $(document).ready(function(){
                                 }
                             }]
                         });
-                        generatePortDg(id,data); 
+                        generatePortDg(id, title, data); 
                         //自定义的函数用于创建edategrid并加载数据
                     },
                     onLoadError:function(data){
@@ -246,7 +357,7 @@ function popDetailRoute(el){
 
 
 // 生成端口表
-function generatePortDg(id,data){
+function generatePortDg(id, tableName, data){
     /*
     $.extend($.fn.datagrid.defaults, {
         filterMenuIconCls: 'icon-ok',
@@ -261,7 +372,9 @@ function generatePortDg(id,data){
         }
     });*/
     // $.extend($.fn.datagrid.defaults,{filterRules:[]});   //加载了新表格，得设filterRules为空，不然共享filterRules
+    var portTabs = $.data($("#otnDispatchTab")[0], "portTabs");
     var el = $("#"+id);
+    portTabs[id]={'el':el, 'tableName':tableName};
 
     el.datagrid({
         singleSelect:"true",
@@ -336,6 +449,7 @@ function generatePortDg(id,data){
                     });
                 }
                 el.datagrid('doFilter');
+                storeAllChangedRows();  // 过滤后会把编辑行的颜色复原，这里再次渲染编辑的行。
             }
         }
     }]);
@@ -570,13 +684,15 @@ function endEdit(){
     if(editIndex==undefined){return true}
     if(tableObject.datagrid('validateRow', editIndex)){
         tableObject.datagrid('endEdit', editIndex);
+        storeAllChangedRows();
+        // renderAllChangedRows();
         editIndex = undefined;
         return true;
     } else {
         return false;
     }
 }
-function edit(rowIndex, rowData){
+function edit(rowIndex, rowData){   // 编辑端口表
     if(editIndex!=rowIndex){
         if(endEdit()){
             tableObject.datagrid('selectRow',rowIndex)
@@ -643,3 +759,136 @@ function undo(){
     }
 }
 
+function storeAllChangedRows(){
+    var portTabs = $.data($("#otnDispatchTab")[0], "portTabs");
+    for(var key in portTabs){
+        var $portTab = portTabs[key].el;
+        var insertedRows = $.data($portTab[0], "datagrid").insertedRows;
+        var deletedRows = $.data($portTab[0], "datagrid").deletedRows;
+        var updatedRows = $.data($portTab[0], "datagrid").updatedRows;
+        portTabs[key].changedRows = {"insertedRows":insertedRows,"deletedRows":deletedRows,"updatedRows":updatedRows};
+        rederUpdatedRows($portTab, updatedRows);
+    }
+
+    function rederUpdatedRows(el, rows){
+        var opts = el.datagrid("options");
+        $.each(rows, function(i){
+            var index = el.datagrid("getRowIndex", rows[i]);
+            opts.finder.getTr(el[0], index).addClass("updatedRows");
+        })
+    }
+}
+
+function undoEdit(){
+
+}
+
+function saveConfirm(){
+    var $saveDialog, $table, $tr, $td, options, portTabs, updatedRows, tableName;
+    $saveDialog = $("#saveDialog");
+    $saveDialog.empty();   // 清空所有子元素
+    portTabs = $.data($("#otnDispatchTab")[0], "portTabs");
+    options = {
+        singleSelect:"true",
+        nowrap:false,
+        fitColumns:true,
+        showHeader:false,
+        columns:[[
+                    {field:"no",title:"序号",width:5},
+                    {field:"anode",title:"本端",width:13},
+                    {field:"direction",title:"方向",width:13},
+                    {field:"znode",title:"对端",width:13},
+                    {field:"route",title:"波道路由",width:25},
+                    {field:"wavelength",title:"波长编号",width:10},
+                    {field:"neident",title:"网元标识",width:10},
+                    {field:"lineport",title:"线路端口",width:15},
+                    {field:"port",title:"支路端口",width:15},
+                    {field:"index",title:"电路编号",width:20},
+                    {field:"remark",title:"备注",width:20},
+                    {field:"system",title:"所属系统",width:5,hidden:true},
+                    {field:"jijiano",title:"机架编号",width:5,hidden:true},
+                    {field:"kuangno",title:"框编号",width:5,hidden:true},
+                    {field:"boardname",title:"单板名称",width:5,hidden:true},
+                    {field:"portindex",title:"端口编号",width:5,hidden:true},
+                    {field:"linetype",title:"电路类型",width:5,hidden:true},
+                    {field:"rtx",title:"收/发",width:5,hidden:true},
+                    {field:"odf",title:"ODF",width:5,hidden:true}
+                ]],
+        onRowContextMenu:function(e,index,row){ //datagrid页面中右键触发，不是tab标题
+            e.preventDefault(); //阻止浏览器捕获右键事件
+            $(this).datagrid("clearSelections"); //取消所有选中项
+            $(this).datagrid("selectRow", index); //根据索引选中该行
+
+            $.data(document.body, "row", row);  //将右键选中的行加入全局缓存
+            $('#tab1_port_table_menu').menu('show', {
+                //显示右键菜单
+                left: e.pageX,//在鼠标点击处显示菜单
+                top: e.pageY
+            });
+        }
+    }
+    for(var key in portTabs){
+        tableName = portTabs[key]["tableName"];
+        updatedRows = portTabs[key]["changedRows"]["updatedRows"];
+        $table = $("<table></table>");
+        $saveDialog.append("<p>"+tableName+"</p>");
+        $saveDialog.append($table[0]);
+        $table.datagrid(options);
+        $table.datagrid("loadData", updatedRows);
+    }
+    $saveDialog.dialog("open");
+}
+
+function saveb(){
+    var portTabs, tablename, vender, rows;
+    var data = new Array();
+    portTabs = $.data($("#otnDispatchTab")[0], "portTabs");
+    $("#saveDialog").dialog("close");
+    $("#cc").showLoading();
+
+    $.each(portTabs, function(key){
+        tablename = key.split("___")[0];
+        vender = key.split("___")[1];
+        rows = portTabs[key]['changedRows']['updatedRows']; //当前只处理更新的行，待实现增加与删除
+        data.push({vender:vender,tablename:tablename,rows:rows})
+    })
+    // var tablename = tableObject[0].id.split('___')[0]   //ToDo改
+    // var vender = tableObject[0].id.split('___')[1]
+    // var rows = undefined;
+    // if(endEdit()){
+    //     rows = tableObject.datagrid('getChanges');
+    //     if(rows.length>0){
+    //         tableObject.datagrid('acceptChanges');
+    //         // alert(rows.length+' rows are changed!');
+    //         if(confirm(rows.length+' rows are changed!')){
+    //             $("#cc").showLoading();
+    //         }else{return;}
+    //     } else {
+    //         alert('还未编辑');
+    //         return;
+    //     }
+    // } else {return;}
+
+    // var data = [{vender:vender,tablename:tablename,rows:rows}];
+    $.ajax({
+        url: "otn/update",
+        // data: {vender:vender,tablename:tablename,rows:JSON.stringify(rows)},
+        data: { updatedata: JSON.stringify(data),
+                action: "edit"},
+        //需把rows转为字符串再传
+        type: "POST",
+        success: function(returnData) {
+            if(returnData=="success"){
+                $("#cc").hideLoading();
+                alert("更新成功");
+            } else {
+                $("#cc").hideLoading();
+                alert("更新失败");
+            }
+        },
+        error:function(){
+            $("#cc").hideLoading();
+            alert("更新失败");
+        }
+    });
+}

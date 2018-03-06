@@ -1,17 +1,23 @@
 function isEmpty(){
 	var searchrecord = $.cookie("searchrecord3");
 
-	inputval = $.trim($("input#box1").val()); //移除字符串两侧的空白字符或其他预定义字符
-	areaval = $("select").val()
-	areatext = $("option[value="+areaval+"]").text(); //拼凑出来的，不是使用val(),因为得出的是01，02
-	//$("input#box1").val("") //更改input框内容
-	if (inputval=="")
+	var inputValList = $("input#box1").val().split("*");
+    var inputValListEx = [];
+    for(var i=0;i<inputValList.length;i++){
+        inputValListEx.push($.trim(inputValList[i]));
+    }
+    $("input#box1").val(inputValListEx.join("*"));  //移除字符串两侧的空白字符或其他预定义字符
+    console.log($("input#box1").val())
+	var areaval = $("select").val()
+	var areatext = $("option[value="+areaval+"]").text(); //拼凑出来的，不是使用val(),因为得出的是01，02
+	//$("input#boxV").val("") //更改input框内容
+	if ($("input#box1").val()=="")
 	{
 		alert("输入不能为空！");
 		return false;
 	}
 	else{
-		var record = {inputval:inputval, areaval:areaval, areatext:areatext}
+		var record = {inputval:$("input#box1").val(), areaval:areaval, areatext:areatext}
 		var record_str = JSON.stringify(record);
 		searchrecord = searchrecord+"||"+record_str;
 		modifyrecord(searchrecord);

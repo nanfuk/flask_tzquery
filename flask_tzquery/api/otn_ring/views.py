@@ -4,7 +4,7 @@ import MySQLdb
 import json, logging, re
 from . import bp
 
-logger = logging.getLogger("otn_ring")
+logger = logging.getLogger("otnRing")
 #otn_ring = Blueprint("otn_ring", __name__)
 
 @bp.before_request      #表示在请求页面之前先连接好数据库

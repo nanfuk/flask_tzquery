@@ -79,7 +79,7 @@ def tree():
     tablename_dict = {'750':u'750','baiyunting':u'白云厅','danan':u'大南', 'gangqian':u'岗前','guiguan':u'桂冠','gyy':u'工业园','haijingcheng':u"海景城","hebinnan":u"河滨南","hetai":u"和泰",
     "huaduguangdian":u"花都广电",'jinzhou':u'金州',"kxc":u"科学城","qs":u"七所",'shiji':u"石基",'tyc':u"太阳城",'xinganglou':u"新港楼",'xm':u"夏茅",
     "xsk":u"新时空","yj":u"云景","kexuezhongxinbei":u"科学中心北","changgangzhong":u"昌岗中","dongpushangye":u"东圃商业","dongxing":u"东兴","hualong":u"化龙","jiayi":u"加怡",
-    "nanguohuayuan":u"南国花园","nantianguangchang":u"南天广场","yuandong":u"远东","yuehao":u"越豪","zhongqiao":u"中侨","zhujiangguangchang":u"珠江广场","yuntai":u"蕴泰","jinfa":u"金发"}
+    "nanguohuayuan":u"南国花园","nantianguangchang":u"南天广场","yuandong":u"远东","yuehao":u"越豪","zhongqiao":u"中侨","zhujiangguangchang":u"珠江广场","yuntai":u"蕴泰","jinfa":u"金发","taiping":u"太平"}
     list_data = []
 
     vender_db_list = [('fh3000_port',u"烽火3000"),('hw_port',u"华为"),('fh4000_port',u"烽火4000"),('zx_port',u"中兴")]
@@ -216,7 +216,7 @@ def update():
         sheet = current_app.config['TABLENAME_DICT'][tablename]   #得表名
         rows = data["rows"]
         updatedb(db, tablename, rows)
-        updateexcel(efile, sheet, rows)
+        updateexcel(efile, sheet, rows) # 保存至excel
     
     return "success"  #可以返回参数
 
@@ -262,10 +262,16 @@ def updateexcel(efile, sheet, rows):
                     "remark","lineport"]   #顺序不能乱
     xlsApp = excel_engine.init()
     xlsApp.open(efile, sheet, isDisplay=False)
-    for row in rows:    #再来个循环，更新xls数据
-        values = map(lambda x:row[x], field_names)  #逐行更新
-        row_index = row["no"]
-        for i,value in enumerate(values):   #从第二列开始更新
-            xlsApp.write(row_index+1, i+2, value)
-    xlsApp.close(isSave=True)   #保存并关闭wb
+    # import pdb;pdb.set_trace()
+    try:
+        for row in rows:    #再来个循环，更新xls数据
+            values = map(lambda x:row[x], field_names)  #逐行更新
+            row_index = row["no"]
+            for i,value in enumerate(values):   #从第二列开始更新
+                xlsApp.write(row_index+1, i+2, value)
+    except AssertionError, e:   # 断言异常，只读时出现
+        xlsApp.close(isSave=False)
+        raise excel_engine.ReadOnlyException(u"%s文件只读，无法写入！")
+    finally:
+        xlsApp.close(isSave=True)   #保存并关闭wb
 

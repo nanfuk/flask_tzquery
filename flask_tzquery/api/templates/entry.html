@@ -8,24 +8,31 @@
 	<meta name="keywords" content="">
 	<link rel="stylesheet" type="text/css" href="static/css/bootstrap.min.css">
 	<link rel="stylesheet" type="text/css" href="static/css/sticky-footer.css">
-	<link rel="stylesheet" type="text/css" href="static/easyui/themes/default/easyui.css">
-	<link rel="stylesheet" type="text/css" href="static/easyui/themes/icon.css">
+	<link rel="stylesheet" type="text/css" href="static/jquery-easyui-1.5.4.2/themes/default/easyui.css">
+	<link rel="stylesheet" type="text/css" href="static/jquery-easyui-1.5.4.2/themes/icon.css">
 	<link href="static/showLoading/css/showLoading.css" rel="stylesheet" media="screen" />
 	<link rel="icon" href="{{ url_for('static', filename = 'favicon.ico') }}" type="image/x-icon">
+	<style type="text/css">
+		.updatedRows{
+		  background: #FBFF8A;
+		  color: #000000;
+		  cursor: default;
+		}
+	</style>
 	<script type="text/javascript" src="static/js/jquery-2.1.1.min.js"></script>
 	<script type="text/javascript" src="static/js/json2.js"></script>
 	<script type="text/javascript" src="static/js/bootstrap.min.js"></script>
-	<script type="text/javascript" src="static/easyui/jquery.easyui.min.js"></script>
-	<!-- <script type="text/javascript" src="static/easyui/jquery.edatagrid.js"></script> -->
-	<script type="text/javascript" src="static/easyui/datagrid-filter.js"></script>
-	<script type="text/javascript" src="static/easyui/datagrid-detailview.js"></script>
+	<script type="text/javascript" src="static/jquery-easyui-1.5.4.2/jquery.easyui.min.js"></script>
+	<!-- <script type="text/javascript" src="static/jquery-easyui-1.5.4.2/jquery.edatagrid.js"></script> -->
+	<script type="text/javascript" src="static/jquery-easyui-1.5.4.2/datagrid-filter.js"></script>
+	<script type="text/javascript" src="static/jquery-easyui-1.5.4.2/datagrid-detailview.js"></script>
 	<script type="text/javascript" src="static/js/underscore-min.js"></script>
 	<script src="static/js/jquery.cookie.js"></script>
 	<script src="static/showLoading/js/jquery.showLoading.min.js"></script>
 </head>
 <body>
 	<div id="tab-tools">
-		<div title="台账查询">
+		<div title="台账查询" style="display: none">
 			<div style="padding: 20px 20px 10px;">
 				<form class="form-inline" accept-charset="utf8" action="/tzquery" method="get" target="_blank">
 			  		<div class="form-group">
@@ -57,11 +64,44 @@
 			</div>
 
 			<div id="footer" style="padding:10px 20px 10px;bottom:0px;position:fixed">
-			<!--<div id="footer">-->
 				<p class="lead">台账数据库更新时间:<font color=#00E3E3>{{updatetime}}</font>。如需更新，请利用值班小工具的数据库更新功能！<a href="#" target="_blank"><span class="badge pull-right">更新指南</span></a></p>
 			</div>
+			<!-- <div class="easyui-accordion" halign="right" style="float:right;margin-top:10%;width:50%;height:50%"> -->
+			<div class="easyui-accordion" id="tzqueryAccordion" halign="right" border="false" style="position:absolute;top:10px;right:0px;width:50%;height:50%">
+				<div title="台账更新" titleDirection="down" style="overflow:auto;padding:10px">
+					<table id="tzqueryUpdateTable"></table>
+				</div>
+			</div>
+			<div id="tzqueryUpdateTableToolBar">
+				<a id="addWb" class="easyui-linkbutton" iconCls="icon-add"></a>
+				<a id="delWb" class="easyui-linkbutton" iconCls="icon-remove"></a>
+				<a id="reloadWb" class="easyui-linkbutton" iconCls="icon-reload"></a>
+			</div>
+			<div id="tzqueryUpdateDlg">
+				<form id="tzqueryUpdateForm" method="post">
+					<input type="text" name="tzexcel" style="width:100%">	<!-- 文件选择框 -->
+					<!-- <select class="easyui-combobox" name="classified" style="width:100%;">
+					    <option value="01">传输台账</option>
+					    <option value="02">数据台账</option>
+					    <option value="03">波分台账</option>
+					</select> -->
+					<select id="classifiedSelect" style="width:100%"></select>
+					<a class="easyui-linkbutton" style="width:100%;height:32px">上传</a>
+					<div id="classifiedSelectOption">
+						<div style="color:#99BBE8;background:#fafafa;padding:5px;">选择一个分类
+						</div>
+						<div style="padding: 10px">
+							<input type="radio" name="fl" value="01"><span>传输台账</span><br/>
+							<input type="radio" name="fl" value="02"><span>数据台账</span><br/>
+							<input type="radio" name="fl" value="03"><span>波分台账</span><br/>
+							<input type="radio" name="fl" value="04"><span>客户评价表&挂名客户经理</span><br/>
+						</div>
+					</div>
+					
+				</form>
+			</div>
 		</div>
-		<div title="总部直管客户">
+		<div title="总部直管客户" style="display: none">
 			<div id="client" style="position:absolute;padding:5px;left:600px;top:20px">
 				<table id="client-210" title="210家总部直管客户名单" style="width:500px;height:250px">
 					<thead>
@@ -74,7 +114,7 @@
 				</table>
 			</div>
 		</div>
-		<div title="波分资源分配">
+		<div title="波分资源分配" id="otnDispatchTab" style="display: none">
 	        <div id="cc" class="easyui-layout" fit="true">
 				<div region="north" border="false" style="height:70%;">
 					<div class="easyui-layout" fit="true">
@@ -91,7 +131,7 @@
 							<div style="display:inline-block">
 								<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-ok" plain="true" onclick="accept()">确认</a>
 								<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-undo" plain="true" onclick="undo()">撤销</a>
-								<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-save" plain="true" onclick="save()">保存</a>
+								<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-save" plain="true" onclick="saveConfirm()">保存</a>
 							</div>
 							<a href="#" title="核心局房优先顺序：太阳城--夏茅--科学城--云景--新时空--750--七所--工业园--中侨--远东--东兴--化龙。汇聚机房优先顺序：按首字母！" position="right" class="easyui-tooltip">电路编号命名规则</a>
 						</div>
@@ -116,17 +156,6 @@
 					    			<input class="easyui-textbox" type="text" id="zno" name="zno" data-options="required:true,readonly:true,width:25" style="display: inline-block;"/>
 					    			</td>
 					    		</tr>
-					    		<!-- <tr>
-					    			<td>波分设备:</td>
-					    			<td>
-					    				<select class="easyui-combobox" name="vender" id="resource_vender">
-					    					<option value="hw">华为</option>
-					    					<option value="fh3000">烽火3000</option>
-					    					<option value="fh4000">烽火4000</option>
-					    					<option value="zx">中兴</option>
-					    				</select>
-					    			</td>
-					    		</tr> -->
 			    			</table>
 			    		</form>
 		    		</div>
@@ -140,10 +169,13 @@
 					<a href="javascript:void(0)" class="easyui-linkbutton" onclick='javascript:$("#dispatchDialog").dialog("open")'>分配资源</a>
 				</div> <!--div center-->
 			</div> <!--div layout-->
-				
-					
+			<div id="saveDialog" class="easyui-dialog" style="width:600px;height:400px" data-options="modal:true,closed:true,buttons:'#saveDialogBtn'"></div>
+			<div id="saveDialogBtn" style="display: none">
+				<a href="#" class="easyui-linkbutton" onclick="saveb()">确认</a>
+				<a href="#" class="easyui-linkbutton" onclick="javascript:$('#saveDialog').dialog('close')">取消</a>
+			</div>
 		</div>
-		<div title="全流程系统">
+		<!-- <div title="全流程系统" style="display: none">
 		    <div id="silverlightControlHost" style="height:100%;width:100%;">
 		        <object data="data:application/x-silverlight-2," type="application/x-silverlight-2" width="100%" height="100%">
 				  <param name="source" value="/static/全流程工单.xap"/>
@@ -157,36 +189,13 @@
 			    </object>
 			    <iframe id="_sl_historyFrame" style="visibility:hidden;height:0px;width:0px;border:0px"></iframe>
 			</div>
-		</div>
-		<div title="波分环路表">
+		</div> -->
+		<div title="波分环路表" style="display: none">
 			<table id="dg" style="width:100%;height:100%;"></table>
 			<div id="toolbar">
 				<input type="radio" class="radioItem" name="vender" value="fhr" checked="checked" />烽火 
 				<input type="radio" class="radioItem" name="vender" value="hwr" />华为
 				<input type="radio" class="radioItem" name="vender" value="zxr" />中兴
-			</div>
-
-			<div id="dlg" class="easyui-dialog" style="width:400px;height:280px;padding:10px 20px" closed="true" buttons="#dlg-buttons">
-				<div class="ftitle">User Information</div>
-				<form id="fm" method="post">
-
-					<div class="fitem">
-						<label>First Name:</label>
-						<input name="firstname" class="easyui-validatebox" required="true">
-					</div>
-					<div class="fitem">
-						<label>Last Name:</label>
-						<input name="lastname" class="easyui-validatebox" required="true">
-					</div>
-					<div class="fitem">
-						<label>Phone:</label>
-						<input name="phone">
-					</div>
-					<div class="fitem">
-						<label>Email:</label>
-						<input name="email" class="easyui-validatebox" validType="email">
-					</div>
-				</form>
 			</div>
 			<div id="dlg-buttons">
 				<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="saveUser()">Save</a>
@@ -199,7 +208,7 @@
 			</div>
 		</div>
 	</div>
-	<div id="dispatchDialog" class="easyui-dialog" title="资源分配" style="width:350px;height:500px" data-options="resizable:true,modal:true,closed:true">
+	<div id="dispatchDialog" class="easyui-dialog" title="资源分配" style="width:350px;height:500px;display: none;" data-options="resizable:true,modal:true,closed:true">
 		<form style="padding: 8px;">
 			<table>
 				<tr>
@@ -247,12 +256,12 @@
 	    <div id="tab1_dispatch_table_menu_deleterow">移除</div>
 	    <div id="tab1_dispatch_table_menu_deleteallrows">移除所有</div>
 	</div>
-</body>
 <script type="text/javascript" src="static/js/main.js"></script>
 <script type="text/javascript" src="static/js/otn_dispatch.js"></script>
 <script type="text/javascript">
-$(function(){
-	$("#tab2_table").datagrid("appendRow",{oldIndex:"",Index:"test",Project:"",requestNo:"",remark:"test",route:"this is a route"});
-$("#tab2_table").datagrid("appendRow",{oldIndex:"",Index:"test",Project:"",requestNo:"",remark:"test",route:"this is a route"});})
+	$(function(){	// 确保easyui-accordion初始化时全部关闭。
+		$("#tzqueryAccordion").accordion('getSelected').panel('collapse');
+	});
 </script>
+</body>
 </html>

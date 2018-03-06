@@ -25,7 +25,7 @@ class excel():
             self.xlsApp.Visible = 1  #窗口可视
         else:
             self.xlsApp.Visible = 0
-        if self.xlsBook.ReadOnly == True :
+        if self.xlsBook.ReadOnly == True:
             return None
         else:       
             return self.xlsBook
@@ -51,10 +51,12 @@ class excel():
         return None
 
     def write(self, row, column, value):
+        assert self.xlsBook.ReadOnly == False, "Excel is readonly"
         self.xlsSheet.Cells(row, column).Value = value
         #print u"写入%s成功" % value
         
     def write_line(self, row, column,valueset):
+        assert self.xlsBook.ReadOnly == False, "Excel is readonly"
         for i in range(len(valueset)):
             self.write(row, column+i, valueset[i])
 
@@ -79,16 +81,17 @@ class excel():
         return i
 
     def close(self, isSave):    #参数为是否保存
-        #pdb.set_trace()
+        # pdb.set_trace()
         self.xlsApp = None  #实验证明，先设xlsApp为None再关闭xlsBook才能销毁进程，不能颠倒顺序
-        if isSave and not self.xlsBook.ReadOnly:
+        # if isSave and not self.xlsBook.ReadOnly:
         #if self.xlsBook.ReadOnly == True:
-            self.xlsBook.Close(True)
-        else:
+            # self.xlsBook.Close(True)
+        # else:
             #self.xlsApp.WindowState = 3
             #pdb.set_trace()
-            self.xlsBook.Close(False)
+            # self.xlsBook.Close(False)
         #self.xlsApp.Quit()
+        self.xlsBook.Close(True)
         
         #self.xlsApp.WindowState = 3
         #pdb.set_trace()
@@ -99,3 +102,8 @@ class excel():
         #print 'xxsd'
         self.xlsApp = None
         
+
+class ReadOnlyException(Exception):
+    def __init__(self, message):
+        Exception.__init__(self)
+        self.message = message
