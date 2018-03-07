@@ -23,13 +23,18 @@ $(document).ready(function(){
 
     $("#tzqueryUpdateTableToolBar > #addWb").linkbutton({
         onClick:function(){
-            $('#tzqueryUpdateDlg').dialog('open')
+            $('#tzqueryUpdateDlg').dialog('open');
         }
     });
 
     $("#tzqueryUpdateTableToolBar > #delWb").linkbutton({
         onClick:function(){
             var checkedRows = $("#tzqueryUpdateTable").datagrid("getChecked");
+            if(checkedRows.length==0){
+                alert("请选择需要移除的EXCEL文件！");
+                return;
+            }
+            $("body").showLoading();
             var wbIndexList = [];
             $.each(checkedRows, function(i){
                 wbIndexList.push(checkedRows[i].wbIndex);
@@ -40,9 +45,11 @@ $(document).ready(function(){
                 data:{action:"del",wbIndexList:wbIndexList},
                 success:function(returndata){
                     $("#tzqueryUpdateTable").datagrid("reload");
+                    $("body").hideLoading();
                 },
                 error:function(returndata){
-                    alert(returndata);
+                    $("body").hideLoading();
+                    alert("移除失败！");
                 }
             });
         }
@@ -89,6 +96,16 @@ $(document).ready(function(){
         onClick:function(){
             var formData = new FormData();
             var files = $("#tzqueryUpdateForm > input").filebox("files"); // 更新到1.5.4才有的方法
+            if(files.length==0){
+                alert("请指定需要加入数据库的EXCEL文件！");
+                return;
+            }
+            if($("#tzqueryUpdateForm").form("validate")==false){
+                alert("请选择特定的分类！");
+                return
+            }
+            $('#tzqueryUpdateDlg').dialog('close');
+            $("body").showLoading();
             $.each(files, function(i){
                 formData.append(i, files[i]);
                 formData.append("lastModified"+i,files[i]["lastModified"]);
@@ -105,9 +122,13 @@ $(document).ready(function(){
                 processData:false,
                 success:function(returndata){
                     $("#tzqueryUpdateTable").datagrid("reload");
+                    $("#tzqueryUpdateForm").form("clear"); //清空表单
+                    $("body").hideLoading();
                 },
                 error:function(returndata){
-                    alert(returndata);
+                    $("body").hideLoading();
+                    $("#tzqueryUpdateForm").form("clear"); //清空表单
+                    alert("添加EXCEL失败！");
                 }
             });
         }

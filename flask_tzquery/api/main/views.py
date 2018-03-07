@@ -257,6 +257,8 @@ def test():
 @bp.route("managedb", methods=["GET","POST"])
 def managedb():
     if request.method == "POST":
+        print "begin"
+        start = time.time()
         action = request.form.get("action")
 
         if action == "add": # 新增excel
@@ -270,6 +272,7 @@ def managedb():
                     
                     f = StringIO.StringIO()
                     f.write(file.read())
+                    print u"读取文件用时:%.2f" % (time.time()-start)
 
                     redis_component.importMemoryExcel(
                         f               = f,

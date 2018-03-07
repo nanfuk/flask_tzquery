@@ -99,6 +99,7 @@ class manageRedis():
         return "%02d" % minWbIndex   # 集合差集中的最小值
 
     def importWithPipe(self, wb, **kwargs):
+        MAXPIPELINE     = 20000     # pipeline单次执行的最大次数，避免出现memoryError异常
         classified      = kwargs.get("classified")  #classified -> 01 专业
         filename        = kwargs.get("filename", "")
         updateTime      = kwargs.get("updateTime", "")
@@ -108,12 +109,13 @@ class manageRedis():
         start = time.time()
         minWbIndex = self.caculateMinWbIndex(classified)
         wbIndex = classified + minWbIndex    # 类别索引，工作簿索引都是utf8类型
+        wbInfo = "||".join([filename, updateTime, lastModified, size])
         tableHash = {}
         count = 0
         i = 0
         with self.redis.pipeline(transaction=False) as p:
             for table in wb.sheets():
-                print table.name
+                print u"表名:%s" % table.name
                 i += 1
                 tableIndex = wbIndex + "%02d" % i
                 colStr = ""
@@ -124,34 +126,52 @@ class manageRedis():
                 
                 premark = unicode(tableIndex)+unicode("%&&%")
 
-                for rownum in range(1,nrows):
-                    rowValue = []
-                    for colnum in range(ncols):
-                        try:
-                            ctype = table.cell(rownum, colnum).ctype
-                            value = table.cell_value(rownum, colnum)
-                        except IndexError: #取值出现越限
-                            print rownum,colnum
-                            ctype = 0
-                            value = ""
-                        if ctype == 3:
-                            try:
-                                date = datetime(*xlrd.xldate_as_tuple(value, 0))    # 传参时多个参数
-                                value = date.strftime("%Y/%m/%d")
-                            except Exception:
-                                pass
-                        rowValue.append(unicode(value))
+                executeTimes = nrows//MAXPIPELINE+1
+                for k in range(executeTimes):
+                    if k == 0:
+                        minRowNum = 1
+                    else:
+                        minRowNum = k*MAXPIPELINE
 
-                    rowLinkStr = premark + "@$$@".join(rowValue)
-                    p.sadd('rowSet',rowLinkStr.encode('utf8'))  # 都是通utf8导入的
-                    count += 1
-                # tableHash.setdefault(tableIndex, wbname+"%&&%"+table.name+"%&&%"+colStr+"")
-                wbInfo = "||".join([filename, updateTime, lastModified, size])
-                tableHash.setdefault(tableIndex, "%&&%".join([wbInfo, table.name, colStr]))
-            p.hmset("tableHash", tableHash)
-            p.execute()
-        print count
-        print time.time()-start
+                    if nrows < (k+1)*MAXPIPELINE:
+                        maxRowNum = nrows
+                    else:
+                        maxRowNum = (k+1)*MAXPIPELINE
+                    
+                    for rownum in range(minRowNum, maxRowNum):
+                        rowValue = []
+                        for colnum in range(ncols):
+                            try:
+                                ctype = table.cell(rownum, colnum).ctype
+                                value = table.cell_value(rownum, colnum)
+                            except IndexError: #取值出现越限
+                                print rownum,colnum
+                                ctype = 0
+                                value = ""
+                            if ctype == 3:
+                                try:
+                                    date = datetime(*xlrd.xldate_as_tuple(value, 0))    # 传参时多个参数
+                                    value = date.strftime("%Y/%m/%d")
+                                except Exception:
+                                    pass
+                            rowValue.append(unicode(value))
+
+                        rowLinkStr = premark + "@$$@".join(rowValue)
+                        p.sadd('rowSet',rowLinkStr.encode('utf8'))  # 都是通utf8导入的
+                        count += 1
+
+                    print u"minRowNum:%d" % minRowNum
+                    print u"maxRowNum:%d" % maxRowNum
+                    p.execute()  
+                    print u"存入rowSet"
+
+                # tableHash.setdefault(tableIndex, "%&&%".join([wbInfo, table.name, colStr]))
+                # p.hmset("tableHash", tableHash) # 把p放入循环内，逐表写入redis，避免出现memoryError的异常
+                p.hmset("tableHash", {tableIndex: "%&&%".join([wbInfo, table.name, colStr])})
+                p.execute()
+                print u"存入tableHash"
+        print u"工作簿总共%d行" % count
+        print u"导入工作簿用时%.2f" % (time.time()-start)
         
     def queryRedis(self, keyword):
         for key in self.redis.sscan_iter('rowSet',match="*%s*" % keyword, count=10000):
