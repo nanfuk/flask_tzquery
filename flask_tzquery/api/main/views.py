@@ -58,56 +58,10 @@ def entry():
 
 @bp.route('tzquery', methods=['GET'])
 def tzquery():
-    
-    # time1 = time.time()
-    # if current_app.session_interface.judge_attack(current_app, request):
-    #     session["time"] = time1
-    #     current_app.session_interface.save_session_without_response(current_app, session)
-    #     logger.warn(u"%s 访问频繁", request.remote_addr)
-    #     return u"访问太频繁！3秒后再查询~.~"
-
-    # session["time"] = time1
-
-    # current_app.session_interface.save_session_without_response(current_app, session)
-
-    # #if request.remote_addr == "10.117.194.222": #黑名单
-    # #    return(u"-_-!!")
+   
     searchword = request.args.get('key', '')    #根据网页的设置编码来得出的是Unicode编码
-    # searchword = "*".join([i.strip(" ") for i in searchword.split("*")])    #去除空格,ToDo前端来做
     area = request.args.get('area', '')
     version = request.args.get("version", '')
-
-    # if version!="1.0":
-    #     return(u"主页已更新，请刷新主页。")
-
-    # searchwordList = searchword.split("*")
-    # keyList = preKey(searchwordList)    # 预处理字符串，传给数据库查询
-    # # rs_generator = g.db.search(keyList, area)    #返回的是一个迭代器，调用next()来获取数据
-    
-    # sum = 0
-    # entries = []
-    """
-    #以下为easyui的展示方式
-    fields_A_to_Z = [chr(x) for x in range(65,91)]
-    for rs, columns, tablename in rs_generator:        
-        counts= len(rs) #rs是一个列表
-        columns = zip(fields_A_to_Z,columns)    #[('A','列名一'),('B','列名二')...]
-        if counts>0:
-            entries.append(dict(rs=rs,tablename=tablename,columns=columns))
-        sum += counts
-    """
-    # for rs,tablename in rs_generator:        
-        # counts=rs.RecordCount
-        # entries.append(dict(rs=rs,tablename=tablename,counts=counts,hash=hashlib.md5(tablename.encode('gbk')).hexdigest()))
-        # sum += counts
-    # tablename = "test"
-    # records = redis_component.query(keyList[0])
-
-
-    # time2 = time.time()
-    # logger.info(u"%s %s->%s 时间:%.2fs，", request.remote_addr, area, searchword, time2-time1)
-
-    # keyList = resumeKey(keyList)     # 把给数据库的字符串还原为网页能识别高亮显示的字符
     return render_template('show_entries.html', searchword=searchword, area=area)
     # if sum==0:
     #     return render_template("not_found.html")
@@ -142,7 +96,6 @@ def tzquery():
 @bp.route('getQueryResult', methods=['POST'])
 def getQueryResult():
     start = time.time()
-    # import pdb;pdb.set_trace()
     keywords = request.form.get("keywords")
     area = request.form.get("area")
     if "keywords" and "area":
@@ -153,9 +106,8 @@ def getQueryResult():
             keywords = [i.encode('utf8') for i in keywords] # 传过来的是Unicode，转为utf8传给redis
         except:
             abort(500)
-        end = time.time()
         records = redis_component.query(area, keywords)
-        
+        end = time.time()
         logger.info(u"%s    关键字:%s    用时:%.2f" % (request.remote_addr, request.form.get("keywords"), end-start))
         
         return json.dumps(records,ensure_ascii=False)

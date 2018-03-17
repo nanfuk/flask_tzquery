@@ -22,12 +22,14 @@ $(document).ready(function(){
     });
 
     $("#tzqueryUpdateTableToolBar > #addWb").linkbutton({
+        disabled:true,
         onClick:function(){
             $('#tzqueryUpdateDlg').dialog('open');
         }
     });
 
     $("#tzqueryUpdateTableToolBar > #delWb").linkbutton({
+        disabled:true,
         onClick:function(){
             var checkedRows = $("#tzqueryUpdateTable").datagrid("getChecked");
             if(checkedRows.length==0){

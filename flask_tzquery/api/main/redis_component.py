@@ -1,11 +1,13 @@
 # -*- coding:utf8 -*-
 
-from redis import Redis
+from redis import ConnectionPool, StrictRedis, Redis
 from collections import OrderedDict
 from datetime import datetime
 import os, re, time, xlrd
 
-redis = Redis(host='127.0.0.1',port=6379)
+rdp = ConnectionPool(host="127.0.0.1", port=6379, max_connections=25)
+
+redis = StrictRedis(connection_pool=rdp)
 
 
 def transKeyWords(keywords):
@@ -200,5 +202,5 @@ class manageRedis():
             p.execute()
         print time.time()-t1
 
-
-redisInstance = manageRedis()
+if __name__ == '__main__':
+    redisInstance = manageRedis()
