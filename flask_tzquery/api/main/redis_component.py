@@ -16,7 +16,8 @@ def transKeyWords(keywords):
     keyword = pattern.sub(r"\\"+r"\1", keywords[0])
     return keyword
 
-def query(area, keywords):
+# preRender预处理关键字，不需要前端再正则替换。可以选择关闭，导出为excel时不需要
+def query(area, keywords, preRender=True):
     keyword = transKeyWords(keywords)
     colNameDict = getColNameDict()
     global redis
@@ -33,8 +34,9 @@ def query(area, keywords):
                 flag = False
                 break
         if flag:
-            for i in range(len(keywords)):  #不使用前端的正则替换，很容易出错。后端把字符替换完即可。
-                rowContent = rowContent.replace(keywords[i],"".join(['<span class="keyword',str(i),'">',keywords[i],'</span>']))
+            if preRender:   
+                for i in range(len(keywords)):  #不使用前端的正则替换，很容易出错。后端把字符替换完即可。
+                    rowContent = rowContent.replace(keywords[i],"".join(['<span class="keyword',str(i),'">',keywords[i],'</span>']))
             rowDict.setdefault(tabIndex, []).append(rowContent.split("@$$@"))
         # ToDo 不能用：区分，因为单元各种会有这种符号
     # rowOrderedDict = OrderedDict(sorted(rowDict.items(),cmp=lambda a,b:int(a[0][1:])-int(b[0][1:]) if a[0][0]==b[0][0] else int(a[0][0])-int(b[0][0]), key=lambda d:int(d[0])))   #使用OrderedDict解决显示输出表格排序的问题
@@ -202,5 +204,5 @@ class manageRedis():
             p.execute()
         print time.time()-t1
 
-if __name__ == '__main__':
-    redisInstance = manageRedis()
+# if __name__ == '__main__':
+redisInstance = manageRedis()

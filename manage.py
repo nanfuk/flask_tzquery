@@ -42,4 +42,4 @@ LogConfig(app)
 if __name__ == '__main__':
     
     # manager.run()   #怎么改host为0.0.0.0，python manage.py runserver -h 0.0.0.0
-    app.run(port=5002, threaded=True)
+    app.run(host="0.0.0.0", port=5000, threaded=True)

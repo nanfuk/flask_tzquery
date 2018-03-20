@@ -58,40 +58,27 @@ def entry():
 
 @bp.route('tzquery', methods=['GET'])
 def tzquery():
-   
-    searchword = request.args.get('key', '')    #根据网页的设置编码来得出的是Unicode编码
-    area = request.args.get('area', '')
+    start = time.time()
+    # import pdb;pdb.set_trace()
+    key = request.args.get('key',"")    #根据网页的设置编码来得出的是Unicode编码
+    try:
+        key = key.encode("utf8")
+    except:
+        abort(500)
+    area = request.args.get('area',"")
     version = request.args.get("version", '')
-    return render_template('show_entries.html', searchword=searchword, area=area)
-    # if sum==0:
-    #     return render_template("not_found.html")
-    # elif sum>1000:
-    #     return render_template("too_many.html",sum=sum)
-    # else:
-    #     pattern = re.compile(r"\\")   #这个正则是给模板用的。
-    #     searchword = pattern.sub(r"\\\\",searchword)  #模板中是继承g的,尝试改下
-    #     #return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
-    #     return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList),searchword=searchword, area=area)
-        # return render_template('show_entries.html', entries=entries,keyList=keyList,keys=len(keyList), area=area)
-        #keys为关键字数目，因为在模板中无法使用len方法
-    """
-    #以下为easyui通过ajax加载表格来提升访问速度的代码
-    if request.method == 'GET':
-        searchword = request.args.get('key', '')    #根据网页的设置编码来得出的是Unicode编码
-        area = request.args.get('area', '')
-        version = request.args.get("version", '')
-        index = 0   #传给js的，告知其下次请求的表号
-        param = json.dumps({'searchword':searchword,'area':area,'index':index})
-        return render_template('test_easyui.html', param=param)
-
-    searchword = request.form['searchword']    #根据网页的设置编码来得出的是Unicode编码
-    keyList = preKey(searchword)
-    area = request.form['area'] 
-
-    index = int(request.form['index'])
-    json_content = g.db.search_by_table_index(keyList, area, index) #这得返回json值
-    return json_content
-    """
+    # ToDo 判断key的编码格式
+    if key!="" and area!="":
+        keywords = key.split("*")
+        records = redis_component.query(area, keywords)
+        rowCount = 0
+        for table in records:
+            rowCount += len(records[table]["rowData"])
+        
+        end = time.time()
+        logger.info(u"%s    关键字:%s->%s    用时:%.2f" % (request.remote_addr, area, key.decode("utf8"), end-start))
+        return render_template('show_entries.html', key=key, area=area, records=records, rowCount=rowCount)
+    abort(500)    #ToDo
 
 @bp.route('getQueryResult', methods=['POST'])
 def getQueryResult():
@@ -106,7 +93,7 @@ def getQueryResult():
             keywords = [i.encode('utf8') for i in keywords] # 传过来的是Unicode，转为utf8传给redis
         except:
             abort(500)
-        records = redis_component.query(area, keywords)
+        records = redis_component.queryForExcel(area, keywords)
         end = time.time()
         logger.info(u"%s    关键字:%s    用时:%.2f" % (request.remote_addr, request.form.get("keywords"), end-start))
         
@@ -114,49 +101,51 @@ def getQueryResult():
     abort(500)    #ToDo
 
 
-@bp.route('/export')
-def export_xls():
-    searchword = request.args.get('key', '')
-    keyList = preKey(searchword)
-    area = request.args.get("area", "") 
+@bp.route('export')
+def export():
+    key = request.args.get('keywords', "")
+    area = request.args.get("area", "")
+    try:
+        key = key.encode("utf8")
+    except:
+        abort(500)
+    if key!="" and area!="":
+        keywords = key.split("*")
+        records = redis_component.query(area, keywords, preRender=False)    #preRender设为False，关键字不加span标记
+        resp = export2xls(records)
+        # try:
+            # resp = export2xls(records)
+        # except:
+            # logger.error(u"%s   导出表格失败，关键字:%s->%s" % (request.remote_addr, area, key.decode("utf8")))
+            # abort(500)
+        logger.info(u"%s    导出表格，关键字:%s->%s" % (request.remote_addr, area, key.decode("utf8")))
+        return resp
+    abort(500)
 
-    rs_generator = g.db.search(keyList, area)
-
-    wb = xlwt.Workbook()
-    wb.encoding = "gbk"
+def export2xls(data):
+    wb = xlwt.Workbook(encoding="utf8")
+    # wb.encoding = "utf8"
     
     lt = time.localtime()
     ISOTIMEFORMAT = '%H_%M_%S'
     ft = time.strftime(ISOTIMEFORMAT, lt)
 
-    pattern = re.compile(r".*__")
-
-    for rs,tablename in rs_generator: 
-        row = 0
-        col = 0
-        #pdb.set_trace()
-        if len(tablename) > 31:
-            tablename = pattern.sub("", tablename)  #excel支持的最大长度表名是31字节。替换掉文件名___来缩减长度。
-
-        ws = wb.add_sheet(tablename)
-        for field in rs.Fields:
-            ws.write(row,col,field.name)
+    for tablename,content in data.items():
+        row = col = 0
+        ws = wb.add_sheet(content["tabIndex"])
+        ws.write(row, col, tablename)
+        row += 1
+        for colName in content["colName"]:
+            ws.write(row,col,colName)
             col += 1
         col = 0
-        #style = xlwt.XFStyle()
-        #style.num_format_str = "D-MMM-YY"
-
-        while not rs.EOF:
-            for field in rs.Fields:
-                try:
-                    ws.write(row+1,col,rs.Fields.Item(field.name).Value)
-                except: #解决xlwt无法写入type<'time'>的问题，把时钟类型强制转为字符串类型
-                    ws.write(row+1,col,str(rs.Fields.Item(field.name).Value))
+        row += 1
+        for rowData in content["rowData"]:
+            for cellData in rowData:
+                ws.write(row,col,cellData)
                 col += 1
-            rs.MoveNext()
             col = 0
             row += 1
-
     sio = StringIO.StringIO()
     wb.save(sio)        #这点很重要，传给save函数的不是保存文件名，而是一个StringIO流
 
@@ -165,8 +154,48 @@ def export_xls():
     resp.headers['Content-type'] = 'application/vnd.ms-excel'  #指定返回的类型,浏览器就会提示要下载的文件是excel文件
     resp.headers['Transfer-Encoding'] ='chunked'    # 表示输出的内容长度不能确定
     resp.headers['Content-Disposition'] = 'attachment;filename="%s.xls"' % ft #设定用户浏览器显示的保存文件名
-    
+
     return resp
+
+
+    # pattern = re.compile(r".*__")
+
+    # for rs,tablename in rs_generator: 
+    #     row = 0
+    #     col = 0
+    #     #pdb.set_trace()
+    #     if len(tablename) > 31:
+    #         tablename = pattern.sub("", tablename)  #excel支持的最大长度表名是31字节。替换掉文件名___来缩减长度。
+
+    #     ws = wb.add_sheet(tablename)
+    #     for field in rs.Fields:
+    #         ws.write(row,col,field.name)
+    #         col += 1
+    #     col = 0
+    #     #style = xlwt.XFStyle()
+    #     #style.num_format_str = "D-MMM-YY"
+
+    #     while not rs.EOF:
+    #         for field in rs.Fields:
+    #             try:
+    #                 ws.write(row+1,col,rs.Fields.Item(field.name).Value)
+    #             except: #解决xlwt无法写入type<'time'>的问题，把时钟类型强制转为字符串类型
+    #                 ws.write(row+1,col,str(rs.Fields.Item(field.name).Value))
+    #             col += 1
+    #         rs.MoveNext()
+    #         col = 0
+    #         row += 1
+
+    # sio = StringIO.StringIO()
+    # wb.save(sio)        #这点很重要，传给save函数的不是保存文件名，而是一个StringIO流
+
+    
+    # resp = make_response(sio.getvalue(), 200)
+    # resp.headers['Content-type'] = 'application/vnd.ms-excel'  #指定返回的类型,浏览器就会提示要下载的文件是excel文件
+    # resp.headers['Transfer-Encoding'] ='chunked'    # 表示输出的内容长度不能确定
+    # resp.headers['Content-Disposition'] = 'attachment;filename="%s.xls"' % ft #设定用户浏览器显示的保存文件名
+    
+    # return resp
     #xlsBook.Close(False)
     #xlsApp.Quit()
 

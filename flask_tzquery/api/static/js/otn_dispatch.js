@@ -271,6 +271,7 @@ $(document).ready(function(){
     $("#jf_list").combotree({
         url:'/otn/get_tree_json',
         method:'get',
+        lines:true,
         onClick:function(node){         //事件处理函数，不能使用onSelect事件
             var id = node.id+"___"+node.attributes.parent;  //id值用于区分不同tabs中不同的表格
             var table_name = node.text; //选取combotree的项名称，例如白云厅
@@ -309,10 +310,15 @@ $(document).ready(function(){
                     }
                 });
             }
+        },
+        onLoadSuccess:function(){
+            var tree = $('#jf_list').combotree('tree');
+            tree.tree("collapseAll");
         }
     });
-    $('#jf_list').combotree('setValue', 750);
-    $('input[name=vender_otn]').val("fh3000_port");
+    
+    // $('#jf_list').combotree('setValue', 750);
+    // $('input[name=vender_otn]').val("fh3000_port");
         
     $("#tab2_table").datagrid({
         singleSelect:"true",

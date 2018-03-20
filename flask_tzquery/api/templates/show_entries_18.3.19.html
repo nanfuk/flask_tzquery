@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>查询结果</title>
+<meta name="description" content="">
+<meta name="keywords" content="">
+<link href="" rel="stylesheet">
+<style type="text/css">
+	.keyword0{color:red;font-weight:bold;}
+	.keyword1{color:#00EE00;font-weight:bold;}
+	.keyword2{color:#00BFFF;font-weight:bold;}
+	.keyword3{color:orange;font-weight:bold;}
+	.keyword4{color:pink;font-weight:bold;}
+	th{background-color:#CCFF99}
+</style>
+<link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="/static/bootstrap-table-v1.11.1/bootstrap-table.min.css">
+<link rel="stylesheet" type="text/css" href="/static/bootstrap-table-v1.11.1/extensions/sticky-header/bootstrap-table-sticky-header.css">
+<script type="text/javascript" src="/static/js/jquery-2.1.1.min.js"></script>
+<script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/static/bootstrap-table-v1.11.1/bootstrap-table.js"></script>
+<script type="text/javascript" src="/static/bootstrap-table-v1.11.1/extensions/sticky-header/bootstrap-table-sticky-header.js"></script>
+<script type="text/javascript" src="/static/js/json2.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+	$.ajax({
+		url:"/getQueryResult",
+		data:{"keywords":JSON.stringify($("#keyword").text().split("*")),
+			"area":$("#area").text()
+		},
+		type:"POST",
+		success:function(data){
+			var $ul = $("<ul></ul>");
+			var content = JSON.parse(data);
+			var tabCount = 0;
+			var rowIndex = 0;
+			for(var tablename in content){
+				var colName = content[tablename]["colName"];
+				var rowData = content[tablename]["rowData"];
+				var tabIndex = content[tablename]["tabIndex"];
+
+				var $li = $("<li></li>");
+				var $a = $("<a></a>").attr("data-toggle","collapse").attr("href","#"+tabIndex).text(tablename);
+				var $small = $("<small></small>").text(rowData.length+"条记录");
+				$li.append($a);
+				$li.append($small);
+
+				var $table = $("<table></table>").attr("id",tabIndex);
+				$table.attr("border",'1').attr("data-toggle","table");
+				$table.attr("class", "table in table-striped table-bordered table-hover table-condensed");
+				// $table.attr("data-sticky-header", true);
+				// $table.attr("style", "word-break:break-all; word-wrap:break-all;")
+
+				var $thead = $("<thead></thead>");
+				var $tbody = $("<tbody></tbody>");
+				
+				var $tr = $("<tr></tr>");
+
+				for(var i=0;i<colName.length;i++){
+					$tr.append('<th>'+colName[i]+"</th>");
+				}
+				$thead.append($tr);
+
+				for(var i=0;i<rowData.length;i++){
+					var row = rowData[i];
+					var $tr = $("<tr></tr>");
+					for(var j=0;j<row.length;j++){
+						$tr.append("<td>"+row[j]+"</td>");
+					}
+					$tbody.append($tr);
+					rowIndex++;
+				}
+
+				$table.append($thead);
+				$table.append($tbody);
+				$li.append($table);
+				$ul.append($li);
+
+				// $table.bootstrapTable({stickyHeader:true});
+				initHeader.apply($table);
+				tabCount++;
+			}
+			$("body").append($("<p></p>").text(["总计",tabCount,"个表包含关键字：",$("#keyword").text(),"，",rowIndex,"条记录。"].join("")));
+			$("body").append($ul);
+
+			// markKeyWord($("#keyword").text());
+		}
+	});
+});
+
+function markKeyWord(keyword){
+	var keyList = keyword.split("*");
+	var ym=document.getElementsByTagName('body')[0].innerHTML;
+	for(var i=0;i<keyList.length;i++){
+		var key = keyList[i];
+		var searchword = key.replace(/\\/g,"\\\\"); // 把\替换为\\
+		searchword = searchword.replace(/\(/g,"\\("); // 把(替换为\(
+		searchword = searchword.replace(/\)/g,"\\)");	// 把)替换为\)
+		searchword = searchword.replace(/\[/g,"\\[");
+		searchword = searchword.replace(/\{/g,"\\{");
+		searchword = searchword.replace(/\^/g,"\\^");
+		searchword = searchword.replace(/\$/g,"\\$");
+		searchword = searchword.replace(/\|/g,"\\|");
+		searchword = searchword.replace(/\?/g,"\\?");
+		searchword = searchword.replace(/\*/g,"\\*");
+		searchword = searchword.replace(/\+/g,"\\+");
+		searchword = searchword.replace(/\./g,"\\.");
+		// var re = new RegExp(searchword, "gi");
+		// re = new RegExp(searchword+"(?![\s\S]*?(?=[\s\S]*?</td>)</a>)", "gi");
+		// re = new RegExp("(?=.*?<td>)"+searchword+"(?=.*?</td>)", "gi");
+		// var re = /02(?=.*?(?!<\/a>)<\/td>)/gi;
+		// re = new RegExp("<*"searchword, "gi");
+
+		$span = $("<span></span>").attr("class","keyword"+i).text(key);
+		ym=ym.replace(re,$span.prop("outerHTML"));
+	}
+	document.getElementsByTagName('body')[0].innerHTML = ym
+}
+</script>
+</head>
+
+<body>
+	<p id="keyword" style="display: none">{{searchword}}</p>
+	<p id="area" style="display: none">{{area}}</p>
+	<script type="text/javascript" src="static/js/sticky-table-header.js"></script>
+</body>
+</html>

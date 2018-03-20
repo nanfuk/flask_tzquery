@@ -76,13 +76,17 @@ def teardown_request(exception):
         
 @bp.route('/get_tree_json')
 def tree():
-    tablename_dict = {'750':u'750','baiyunting':u'白云厅','danan':u'大南', 'gangqian':u'岗前','guiguan':u'桂冠','gyy':u'工业园','haijingcheng':u"海景城","hebinnan":u"河滨南","hetai":u"和泰",
-    "huaduguangdian":u"花都广电",'jinzhou':u'金州',"kxc":u"科学城","qs":u"七所",'shiji':u"石基",'tyc':u"太阳城",'xinganglou':u"新港楼",'xm':u"夏茅",
-    "xsk":u"新时空","yj":u"云景","kexuezhongxinbei":u"科学中心北","changgangzhong":u"昌岗中","dongpushangye":u"东圃商业","dongxing":u"东兴","hualong":u"化龙","jiayi":u"加怡",
-    "nanguohuayuan":u"南国花园","nantianguangchang":u"南天广场","yuandong":u"远东","yuehao":u"越豪","zhongqiao":u"中侨","zhujiangguangchang":u"珠江广场","yuntai":u"蕴泰","jinfa":u"金发","taiping":u"太平"}
+    tablename_dict = {
+        '750':u'750','baiyunting':u'白云厅','danan':u'大南', 'gangqian':u'岗前','guiguan':u'桂冠','gyy':u'工业园',
+        'haijingcheng':u"海景城","hebinnan":u"河滨南","hetai":u"和泰","huaduguangdian":u"花都广电",'jinzhou':u'金州',
+        "kxc":u"科学城","qs":u"七所",'shiji':u"石基",'tyc':u"太阳城",'xinganglou':u"新港楼",'xm':u"夏茅","xsk":u"新时空",
+        "yj":u"云景","kexuezhongxinbei":u"科学中心北","changgangzhong":u"昌岗中","dongpushangye":u"东圃商业","dongxing":u"东兴",
+        "hualong":u"化龙","jiayi":u"加怡","nanguohuayuan":u"南国花园","nantianguangchang":u"南天广场","yuandong":u"远东",
+        "yuehao":u"越豪","zhongqiao":u"中侨","zhujiangguangchang":u"珠江广场","yuntai":u"蕴泰","jinfa":u"金发","taiping":u"太平"
+    }
     list_data = []
 
-    vender_db_list = [('fh3000_port',u"烽火3000"),('hw_port',u"华为"),('fh4000_port',u"烽火4000"),('zx_port',u"中兴")]
+    vender_db_list = [('fh3000_port',u"烽火3000"),('hw_port',u"华为"),('fh4000_port',u"烽火4000&6000"),('zx_port',u"中兴")]
 
     for vender_db,vender_name in vender_db_list:
         dict_data = {}
