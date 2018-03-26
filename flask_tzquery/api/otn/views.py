@@ -169,7 +169,6 @@ def otn_port():
     try:
         g.cursor.execute(sql)
     except Exception,e:
-        # pdb.set_trace()
         print e
         abort(400)
        

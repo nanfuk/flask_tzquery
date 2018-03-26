@@ -223,12 +223,13 @@ $(document).ready(function(){
     $("#disDetailRouteTable").datagrid({
         remoteSort:false,   // 默认是true，必须设为false才能在本地列排序
         // title:"详细波道信息",
+        fitColumns:true,
         columns:[[
-                {field:'route',title:"路由信息"},
+                {field:'route',title:"路由信息", width:300},
                 {
                     field:'wl',
                     title:'占用波道',
-                    // width:100,
+                    width:100,
                     sortable:true,
                     sorter:function(a,b){
                         return parseInt(a)>parseInt(b)?1:-1
@@ -378,9 +379,9 @@ $(document).ready(function(){
 function popDetailRoute(el){
     var dgTableRowIndex = $(el).data("dgtablerowindex");
     var ddvTableRowIndex = $(el).data("ddvtablerowindex");
-    var content = $("#ddv-"+dgTableRowIndex).datagrid('getData').rows[ddvTableRowIndex].content
-    $("#disDetailRouteTable").datagrid('loadData',content);
+    var content = $("#ddv-"+dgTableRowIndex).datagrid('getData').rows[ddvTableRowIndex].content;
     $("#disDetailRouteWin").window('open');
+    $("#disDetailRouteTable").datagrid('loadData',content);
 }
 
 
@@ -408,27 +409,27 @@ function generatePortDg(id, tableName, data){
     el.datagrid({
         singleSelect:"true",
         nowrap:false,
-        fitColumns:true,
+        // fitColumns:true,
         columns:[[
-                    {field:"no",title:"序号",width:5},
-                    {field:"anode",title:"本端",width:13},
-                    {field:"direction",title:"方向",width:13,editor:"text"},
-                    {field:"znode",title:"对端",width:13,editor:"text"},
-                    {field:"route",title:"波道路由",width:25,editor:"text"},
-                    {field:"wavelength",title:"波长编号",width:10,editor:"text"},
-                    {field:"neident",title:"网元标识",width:10,editor:"text"},
-                    {field:"lineport",title:"线路端口",width:15,editor:"text"},
-                    {field:"port",title:"支路端口",width:15,editor:"text"},
-                    {field:"index",title:"电路编号",width:20,editor:"text"},
-                    {field:"remark",title:"备注",width:20,editor:"text"},
-                    {field:"system",title:"所属系统",width:5,editor:"text",hidden:true},
-                    {field:"jijiano",title:"机架编号",width:5,editor:"text",hidden:true},
-                    {field:"kuangno",title:"框编号",width:5,editor:"text",hidden:true},
-                    {field:"boardname",title:"单板名称",width:5,editor:"text",hidden:true},
-                    {field:"portindex",title:"端口编号",width:5,editor:"text",hidden:true},
-                    {field:"linetype",title:"电路类型",width:5,editor:"text",hidden:true},
-                    {field:"rtx",title:"收/发",width:5,editor:"text",hidden:true},
-                    {field:"odf",title:"ODF",width:5,editor:"text",hidden:true}
+                    {field:"no",title:"序号",width:30},
+                    {field:"anode",title:"本端",width:120},
+                    {field:"direction",title:"方向",width:80,editor:"text"},
+                    {field:"znode",title:"对端",width:80,editor:"text"},
+                    {field:"route",title:"波道路由",width:180,editor:"text"},
+                    {field:"wavelength",title:"波长",width:50,editor:"text"},
+                    {field:"neident",title:"网元标识",width:60,editor:"text"},
+                    {field:"lineport",title:"线路端口",width:80,editor:"text"},
+                    {field:"port",title:"支路端口",width:80,editor:"text"},
+                    {field:"linetype",title:"速率",width:40,editor:"text"},
+                    {field:"index",title:"电路编号",width:150,editor:"text"},
+                    {field:"remark",title:"备注",width:180,editor:"text"},
+                    {field:"odf",title:"ODF",width:120,editor:"text"},
+                    {field:"system",title:"所属系统",width:80,editor:"text",hidden:true},
+                    {field:"jijiano",title:"机架编号",width:60,editor:"text",hidden:true},
+                    {field:"kuangno",title:"框编号",width:60,editor:"text",hidden:true},
+                    {field:"boardname",title:"单板名称",width:60,editor:"text",hidden:true},
+                    {field:"portindex",title:"端口编号",width:60,editor:"text",hidden:true},
+                    {field:"rtx",title:"收/发",width:50,editor:"text",hidden:true}
                 ]],
         onDblClickRow: edit,
         onRowContextMenu:function(e,index,row){ //datagrid页面中右键触发，不是tab标题
@@ -442,8 +443,58 @@ function generatePortDg(id, tableName, data){
                 left: e.pageX,//在鼠标点击处显示菜单
                 top: e.pageY
             });
+        },
+        onHeaderContextMenu: function(e, field){
+            e.preventDefault();
+            if (!$cmenu){
+                createColumnMenu(el);    // el是对应的datagrid的选择器
+            }
+            $cmenu.menu('show', {
+                left:e.pageX,
+                top:e.pageY
+            });
         }
     });
+
+    var $cmenu;     // 端口表列名右键菜单
+    function createColumnMenu(el){  // el是对应的datagrid的选择器
+        $cmenu = $('<div/>').appendTo('body');
+        $cmenu.menu({
+            onClick: function(item){
+                if (item.iconCls == 'icon-ok'){
+                    el.datagrid('hideColumn', item.name);
+                    $cmenu.menu('setIcon', {
+                        target: item.target,
+                        iconCls: 'icon-empty'
+                    });
+                } else {
+                    el.datagrid('showColumn', item.name);
+                    $cmenu.menu('setIcon', {
+                        target: item.target,
+                        iconCls: 'icon-ok'
+                    });
+                }
+                // el.datagrid("fitColumns");
+            }
+        });
+        var fields = el.datagrid('getColumnFields');
+        for(var i=0; i<fields.length; i++){
+            var field = fields[i];
+            var col = el.datagrid('getColumnOption', field);
+            if(col.hidden){
+                $cmenu.menu('appendItem', {
+                    text: col.title,
+                    name: field,
+                });
+            } else {
+                $cmenu.menu('appendItem', {
+                text: col.title,
+                name: field,
+                iconCls: 'icon-ok'
+                });
+            }
+        }
+    }
     
     el.datagrid('loadData',JSON.parse(data));       //需要把json数据转为数组才能使用,必须在加载过滤器前加载表格数据
 
@@ -519,6 +570,7 @@ $("#otn_resource_tabs_contextmenu").menu({
 // 端口表右键菜单
 $("#tab1_port_table_menu").menu({
     onClick:function(item){
+        var id = item.id;
         var db_table = $.data(document.body, "db_table");
         
         var table = db_table[0].split("___")[0];
@@ -528,14 +580,24 @@ $("#tab1_port_table_menu").menu({
         var dbname = db_table[1].split("_")[1];
 
         var row = $.data(document.body, "row");
-        if(item.id=="tab1_table_menu_source"){
+        if(id=="tab1_table_menu_edit"){
+            $("#port_table_edit_window > form").form('load', row);
+            $("#port_table_edit_window").panel("open");
+        }
+        else if(id=="tab1_table_menu_insert"){
+            alert("插入一行");
+        }
+        else if(id="tab1_table_menu_del"){
+            alert("删除该行");
+        }
+        else if(id=="tab1_table_menu_source"){
             $("#atable").textbox("setValue", tablename);
             $("#ano").textbox("setValue", row['no']);
             $("#avender").textbox('setValue', dbname);
             $("#vender").textbox('setValue',db);   //vender是hidden的input框
             $.data(document.body, "source", {vender:db,tablename:table,rows:[row]});    //otn/update需求的数据格式
         }
-        else if(item.id=="tab1_table_menu_dest"){
+        else if(id=="tab1_table_menu_dest"){
             $("#ztable").textbox("setValue", tablename);
             $("#zno").textbox("setValue", row['no']);
             $("#zvender").textbox('setText', dbname);

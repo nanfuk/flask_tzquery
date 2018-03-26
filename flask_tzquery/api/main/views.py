@@ -93,7 +93,7 @@ def getQueryResult():
             keywords = [i.encode('utf8') for i in keywords] # 传过来的是Unicode，转为utf8传给redis
         except:
             abort(500)
-        records = redis_component.queryForExcel(area, keywords)
+        records = redis_component.query(area, keywords)
         end = time.time()
         logger.info(u"%s    关键字:%s    用时:%.2f" % (request.remote_addr, request.form.get("keywords"), end-start))
         
