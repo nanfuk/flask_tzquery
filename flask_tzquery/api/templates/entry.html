@@ -260,61 +260,150 @@
 	    <div id="tab1_dispatch_table_menu_deleteallrows">移除所有</div>
 	</div>
 	<div id="port_table_edit_window" class="easyui-window" data-options="iconCls:'icon-save',
-		closed:true,modal:true" style="width:400px;height:450px;display:none">
-		<form method="post">
-		    <div>
-		        <label for="anode">本端:</label>
-		        <input class="easyui-validatebox" type="text" name="anode" data-options="required:true" />
-		    </div>
-		    <div>
-		        <label for="direction">方向:</label>
-		        <input class="easyui-validatebox" type="text" name="direction"/>
-		    </div>
-		    <div>
-		        <label for="znode">对端:</label>
-		        <input class="easyui-validatebox" type="text" name="znode"/>
-		    </div>
-		    <div>
-		        <label for="route">路由:</label>
-		        <input class="easyui-validatebox" type="text" name="route"/>
-		    </div>
-		    <div>
-		        <label for="system">所属系统:</label>
-		        <input class="easyui-validatebox" type="text" name="system"/>
-		    </div>
-		    <div>
-		        <label for="wavelength">波长编号:</label>
-		        <input class="easyui-validatebox" type="text" name="wavelength"/>
-		    </div>
-		    <div>
-		        <label for="neident">网元标识:</label>
-		        <input class="easyui-validatebox" type="text" name="neident"/>
-		    </div>
-		    <div>
-		        <label for="lineport">线路端口:</label>
-		        <input class="easyui-validatebox" type="text" name="lineport"/>
-		    </div>
-		    <div>
-		        <label for="port">支路端口:</label>
-		        <input class="easyui-validatebox" type="text" name="port"/>
-		    </div>
-		    <div>
-		        <label for="linetype">速率:</label>
-		        <input class="easyui-validatebox" type="text" name="linetype"/>
-		    </div>
-		    <div>
-		        <label for="index">电路编号:</label>
-		        <input class="easyui-validatebox" type="text" name="index"/>
-		    </div>
-		    <div>
-		        <label for="remark">备注:</label>
-		        <input class="easyui-validatebox" type="text" name="remark"/>
-		    </div>
-		    <div>
-		        <label for="odf">ODF:</label>
-		        <input class="easyui-validatebox" type="text" name="odf"/>
-		    </div>
-		</form>
+		closed:true,modal:true" style="width:400px;height:550px;display:none">
+		<div style="padding: 10px 60px 20px 60px">
+			<form>
+				<input type="hidden" name="db" />
+				<input type="hidden" name="table" />
+				<input type="hidden" name="no" />
+				<input type="hidden" name="jijiano" />
+				<input type="hidden" name="kuangno" />
+				<input type="hidden" name="boardname" />
+				<input type="hidden" name="portindex" />
+				<input type="hidden" name="rtx" />
+				<table>
+					<tr>
+						<td>本端：</td>
+						<td><input class="easyui-validatebox" name="anode" data-options="required:true,width:200" style="width:200px" /></td>
+					</tr>
+					<tr>
+						<td>方向：</td>
+						<td><input class="easyui-validatebox" name="direction" data-options="width:200"  /></td>
+					</tr>
+					<tr>
+						<td>对端：</td>
+						<td><input class="easyui-validatebox" name="znode" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>路由：</td>
+						<td><input class="easyui-validatebox" name="route" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>所属系统：</td>
+						<td><input class="easyui-validatebox" name="system" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>波长：</td>
+						<td><input class="easyui-validatebox" name="wavelength" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>网元标识：</td>
+						<td><input class="easyui-validatebox" name="neident" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>线路端口：</td>
+						<td><input class="easyui-validatebox" name="lineport" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>支路端口：</td>
+						<td><input class="easyui-validatebox" name="port" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>速率：</td>
+						<td><input class="easyui-validatebox" name="linetype" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>电路编号：</td>
+						<td><input class="easyui-validatebox" name="index" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>备注：</td>
+						<td><input class="easyui-textbox" name="remark" data-options="multiline:true,width:200,height:100" /></td>
+					</tr>
+					<tr>
+						<td>ODF：</td>
+						<td><input class="easyui-validatebox" name="odf" data-options="width:200" /></td>
+					</tr>
+				</table>
+			</form>
+			<div style="text-align: center;padding: 5px">
+				<a href="javascript:void(0)" class="easyui-linkbutton">提交</a>
+				<a href="javascript:void(0)" class="easyui-linkbutton">取消</a>
+			</div>
+		</div>
+	</div>
+	<div id="port_table_add_window" class="easyui-window" data-options="iconCls:'icon-save',
+		closed:true,modal:true" style="width:400px;height:550px;display:none">
+		<div style="padding: 10px 60px 20px 60px">
+			<form>
+				<input type="hidden" name="db" />
+				<input type="hidden" name="table" />
+				<input type="hidden" name="no" />
+				<input type="hidden" name="jijiano" />
+				<input type="hidden" name="kuangno" />
+				<input type="hidden" name="boardname" />
+				<input type="hidden" name="portindex" />
+				<input type="hidden" name="rtx" />
+				<table>
+					<tr>
+						<td>本端：</td>
+						<td><input class="easyui-validatebox" name="anode" data-options="required:true,width:200" style="width:200px" /></td>
+					</tr>
+					<tr>
+						<td>方向：</td>
+						<td><input class="easyui-validatebox" name="direction" data-options="width:200"  /></td>
+					</tr>
+					<tr>
+						<td>对端：</td>
+						<td><input class="easyui-validatebox" name="znode" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>路由：</td>
+						<td><input class="easyui-validatebox" name="route" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>所属系统：</td>
+						<td><input class="easyui-validatebox" name="system" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>波长：</td>
+						<td><input class="easyui-validatebox" name="wavelength" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>网元标识：</td>
+						<td><input class="easyui-validatebox" name="neident" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>线路端口：</td>
+						<td><input class="easyui-validatebox" name="lineport" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>支路端口：</td>
+						<td><input class="easyui-validatebox" name="port" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>速率：</td>
+						<td><input class="easyui-validatebox" name="linetype" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>电路编号：</td>
+						<td><input class="easyui-validatebox" name="index" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>备注：</td>
+						<td><input class="easyui-textbox" name="remark" data-options="multiline:true,width:200,height:100" /></td>
+					</tr>
+					<tr>
+						<td>ODF：</td>
+						<td><input class="easyui-validatebox" name="odf" data-options="width:200" /></td>
+					</tr>
+				</table>
+			</form>
+			<div style="text-align: center;padding: 5px">
+				<a href="javascript:void(0)" class="easyui-linkbutton">提交</a>
+				<a href="javascript:void(0)" class="easyui-linkbutton">取消</a>
+			</div>
+		</div>
 	</div>
 <script type="text/javascript" src="static/js/main.js"></script>
 <script type="text/javascript" src="static/js/otn_dispatch.js"></script>

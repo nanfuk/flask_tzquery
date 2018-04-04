@@ -32,7 +32,7 @@
 <script type="text/javascript" src="/static/js/json2.js"></script>
 <script type="text/javascript">
 $(document).ready(function(){
-    var keywords = "{{key.decode('utf8')}}";
+    var keywords = "{{key.decode('utf8')|safe}}";
     var area = "{{area}}"
     $("#export2xls").attr("href","export?keywords="+encodeURIComponent(keywords)+"&area="+encodeURIComponent(area));
 });

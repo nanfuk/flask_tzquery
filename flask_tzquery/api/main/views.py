@@ -59,7 +59,6 @@ def entry():
 @bp.route('tzquery', methods=['GET'])
 def tzquery():
     start = time.time()
-    # import pdb;pdb.set_trace()
     key = request.args.get('key',"")    #根据网页的设置编码来得出的是Unicode编码
     try:
         key = key.encode("utf8")
@@ -105,7 +104,7 @@ def getQueryResult():
 def export():
     key = request.args.get('keywords', "")
     area = request.args.get("area", "")
-    try:
+    try: # POST请求的key要考虑url编码的问题
         key = key.encode("utf8")
     except:
         abort(500)

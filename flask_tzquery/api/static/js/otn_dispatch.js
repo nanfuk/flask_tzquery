@@ -495,6 +495,18 @@ function generatePortDg(id, tableName, data){
             }
         }
     }
+    function deleteRow(){
+        $.ajax({
+            url:"otn/update",
+            data:data,
+            success:function(){
+                alert("删除成功！");
+            },
+            error:function(){
+                alert("删除失败！")
+            }
+        });
+    }
     
     el.datagrid('loadData',JSON.parse(data));       //需要把json数据转为数组才能使用,必须在加载过滤器前加载表格数据
 
@@ -567,27 +579,82 @@ $("#otn_resource_tabs_contextmenu").menu({
     }
 })
 
+// 修改窗口提交按键
+$("#port_table_edit_window>>>a:eq(0)").linkbutton({
+    onClick: function(){
+        var formArray = $("#port_table_edit_window>>form").serializeArray(); // 表单序列化,[{name:n1,value:v1},...]
+        var data = {};
+        $.each(formArray, function(i){
+            data[formArray[i]["name"]] = formArray[i]["value"]; // 转为{n1:v1,n2:v2,..}形式
+        });
+        $.ajax({
+            type:"POST",
+            url:"otn/edit",
+            data:data,
+            success:function(returnData){
+                alert("修改成功！")
+            },
+            error:function(returnData){
+                alert("修改失败！")
+            }
+        });
+    }
+});
+
+// 修改窗口撤销按键
+$("#port_table_edit_window>>>a:eq(1)").linkbutton({
+    onClick: function(){
+        alert("modify");
+    }
+});
+
+// 插入窗口提交按键
+$("#port_table_add_window>>>a:eq(0)").linkbutton({
+    onClick: function(){
+        var formArray = $("#port_table_add_window>>form").serializeArray(); // 表单序列化,[{name:n1,value:v1},...]
+        var data = {};
+        $.each(formArray, function(i){
+            data[formArray[i]["name"]] = formArray[i]["value"]; // 转为{n1:v1,n2:v2,..}形式
+        });
+        $.ajax({
+            type:"POST",
+            url:"otn/insert",
+            data:data,
+            success:function(returnData){
+                alert("添加成功！")
+            },
+            error:function(returnData){
+                alert("添加失败！")
+            }
+        });
+    }
+});
+
 // 端口表右键菜单
 $("#tab1_port_table_menu").menu({
     onClick:function(item){
         var id = item.id;
         var db_table = $.data(document.body, "db_table");
         
-        var table = db_table[0].split("___")[0];
-        var db = db_table[0].split("___")[1];
+        var table = db_table[0].split("___")[0];    //gyy
+        var db = db_table[0].split("___")[1];       //hw_port
 
-        var tablename = db_table[1].split("_")[0];
-        var dbname = db_table[1].split("_")[1];
+        var tablename = db_table[1].split("_")[0];  //工业园
+        var dbname = db_table[1].split("_")[1];     //华为
 
         var row = $.data(document.body, "row");
         if(id=="tab1_table_menu_edit"){
-            $("#port_table_edit_window > form").form('load', row);
+            $.extend(row, {table:table, db:db});    // 把table与db合并到row，然后再填充到form中
+            $("#port_table_edit_window >> form").form('load', row);
             $("#port_table_edit_window").panel("open");
         }
         else if(id=="tab1_table_menu_insert"){
-            alert("插入一行");
+            $("#port_table_add_window >> form > input[name='db']").val(db);
+            $("#port_table_add_window >> form > input[name='table']").val(table);
+            $("#port_table_add_window >> form > input[name='no']").val(row.no);
+            $("#port_table_add_window").panel("open");
         }
-        else if(id="tab1_table_menu_del"){
+        else if(id=="tab1_table_menu_del"){
             alert("删除该行");
         }
         else if(id=="tab1_table_menu_source"){
@@ -748,7 +815,11 @@ function confirmDispatch(){
         data: { updatedata: JSON.stringify(data),
                 action: "dispatch"},
         type: "POST",
-        success: appendDispatchTable
+        success: appendDispatchTable,
+        error: function(){
+            $("#cc").hideLoading();
+            alert("更新失败！")
+        }
     });
 }
 

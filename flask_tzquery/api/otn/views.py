@@ -205,24 +205,111 @@ def export_dispatch_excel():
     rsp.headers["Content-Disposition"] = "attachment;filename='%s.xls'" % ft
     return rsp
 
-
-# 更新端口表格内容，包括excel
 @bp.route('/update', methods=['POST'])
 def update():
+
     action = request.form["action"]
     updatedata = json.loads(request.form["updatedata"])
     
     for data in updatedata:
         db = data["vender"]
         tablename = data["tablename"]
-        efile = current_app.config['VENDER_FILE_DICT'][db] #得excel名
-        sheet = current_app.config['TABLENAME_DICT'][tablename]   #得表名
+        # efile = current_app.config['VENDER_FILE_DICT'][db] #得excel名
+        # sheet = current_app.config['TABLENAME_DICT'][tablename]   #得表名
         rows = data["rows"]
         updatedb(db, tablename, rows)
-        updateexcel(efile, sheet, rows) # 保存至excel
+        # updateexcel(efile, sheet, rows) # 保存至excel
     
     return "success"  #可以返回参数
+    # abort(500)
 
+# 更新端口表格内容，包括excel
+@bp.route('/edit', methods=['POST'])
+def edit():
+    db = request.form.get("db")
+    table = request.form.get("table")
+    if db and table:
+        try:
+            updatedb(db, table, [request.form])
+        except:
+            abort(500)
+    # action = request.form["action"]
+    # updatedata = json.loads(request.form["updatedata"])
+    
+    # for data in updatedata:
+    #     db = data["vender"]
+    #     tablename = data["tablename"]
+    #     efile = current_app.config['VENDER_FILE_DICT'][db] #得excel名
+    #     sheet = current_app.config['TABLENAME_DICT'][tablename]   #得表名
+    #     rows = data["rows"]
+    #     # updatedb(db, tablename, rows)
+    #     # updateexcel(efile, sheet, rows) # 保存至excel
+    
+        return "success"  #可以返回参数
+    abort(500)
+
+@bp.route('/insert', methods=['POST'])
+def insert():
+    db = request.form.get("db")
+    table = request.form.get("table")
+    if db and table:
+        # try:
+        insertdb(db, table, [request.form])
+        # except:
+            # abort(500)
+        return "success"  #可以返回参数
+    abort(500)
+
+
+def insertdb(db, tablename, rows):
+    field_names = [ "anode","direction","znode","route","system","wavelength","neident","jijiano",
+                    "kuangno","port","boardname","portindex","linetype","index","odf","rtx",
+                    "remark","lineport"]   #顺序不能乱
+    
+    for row in rows:
+        values = map(lambda x:row[x], field_names)
+        values.insert(0, int(row["no"])+1)
+        values.insert(0, tablename)
+        values.insert(0, db)
+        sql1 = u"""
+               update %s.%s
+               set 序号=序号+10000
+               where 序号>%s
+               """ % (db, tablename, row["no"])
+        sql2 = u"""
+                insert into %s.%s (
+                序号,
+                站点（本端落地）,
+                方向,
+                对端落地,
+                波道路由,
+                所属系统,
+                对应的高端系统时隙编号（波长编号）,
+                网元标识,
+                机架编号,
+                框编号,
+                槽号,
+                单板名称,
+                端口编号,
+                电路类型,
+                广州联通电路编号,
+                `端子号（DDF/ODF架号-子模块号-端子号）`,
+                `收/发`,
+                备注,
+                对应10G波长转换板
+                ) values (%d,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')
+                """ % tuple(values)
+        import pdb;pdb.set_trace()
+        g.cursor.execute(sql1)
+        g.cursor.execute(sql2)
+    g.conn.commit()
+    sql3 = u"""
+           update %s.%s
+           set 序号=序号-10000+1
+           where 序号>%s
+           """ % (db, tablename, row["no"])
+    g.cursor.execute(sql3)
+    g.conn.commit()
 
 # 更新数据库
 def updatedb(db, tablename, rows):
