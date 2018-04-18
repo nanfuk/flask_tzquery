@@ -139,21 +139,24 @@
 				</div> <!--div north-->
 				<div region="west" border="false" title="资源分配框" style="width:30%;height:100%">
 					<div style="padding:10px 30px 20px 30px">
-						<form id="ff" method="post">
+						<form id="generateRouteForm" method="post">
 			    			<table cellpadding="5">
 					    		<tr>
 					    			<td>A端:</td>
-					    			<td><input class="easyui-textbox" type="text" id="atable" name="atable" data-options="required:true,readonly:true,width:75"/>
-				    				<input class="easyui-textbox" type="text" id="avender" data-options="required:true,readonly:true,width:75"/>
-				    				<input class="easyui-textbox" type="text" id="ano" name="ano" data-options="required:true,readonly:true,width:25"/>
-				    				<input class="easyui-textbox" type="hidden" id="vender" name="vender"/>
+					    			<td><input class="easyui-textbox" type="text" data-options="required:true,readonly:true,width:75"/>
+				    				<input class="easyui-textbox" type="text" data-options="required:true,readonly:true,width:75"/>
+				    				<input class="easyui-textbox" type="text" name="ano" data-options="required:true,readonly:true,width:40"/>
+				    				<input type="hidden" name="atable"/>
+				    				<input type="hidden" name="adb"/>
 				    				</td>
 					    		</tr>
 					    		<tr>
 					    			<td>Z端:</td>
-					    			<td><input class="easyui-textbox" type="text" id="ztable" name="ztable" data-options="required:true,readonly:true,width:75" style="display: inline-block;"/>
-					    			<input class="easyui-textbox" type="text" id="zvender" data-options="required:true,readonly:true,width:75" style="display: inline-block;"/>
-					    			<input class="easyui-textbox" type="text" id="zno" name="zno" data-options="required:true,readonly:true,width:25" style="display: inline-block;"/>
+					    			<td><input class="easyui-textbox" type="text" data-options="required:true,readonly:true,width:75"/>
+					    			<input class="easyui-textbox" type="text" data-options="required:true,readonly:true,width:75"/>
+					    			<input class="easyui-textbox" type="text" name="zno" data-options="required:true,readonly:true,width:40"/>
+					    			<input type="hidden" name="ztable"/>
+				    				<input type="hidden" name="zdb"/>
 					    			</td>
 					    		</tr>
 			    			</table>
@@ -266,8 +269,8 @@
 				<input type="hidden" name="db" />
 				<input type="hidden" name="table" />
 				<input type="hidden" name="no" />
-				<input type="hidden" name="jijiano" />
-				<input type="hidden" name="kuangno" />
+				
+				
 				<input type="hidden" name="boardname" />
 				<input type="hidden" name="portindex" />
 				<input type="hidden" name="rtx" />
@@ -299,6 +302,14 @@
 					<tr>
 						<td>网元标识：</td>
 						<td><input class="easyui-validatebox" name="neident" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>机架号：</td>
+						<td><input class="easyui-validatebox" name="jijiano" data-options="width:200" /></td>
+					</tr>
+					<tr>
+						<td>框号：</td>
+						<td><input class="easyui-validatebox" name="kuangno" data-options="width:200" /></td>
 					</tr>
 					<tr>
 						<td>线路端口：</td>

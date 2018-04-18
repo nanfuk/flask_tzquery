@@ -13,6 +13,7 @@ import hashlib
 import logging
 
 import redis_component
+import threading
 
 from urllib import unquote   #实现url解码
 
@@ -48,6 +49,10 @@ logger = logging.getLogger('tzquery')
     # db = getattr(g, 'db', None)
     # if db is not None:
         # db.close()
+
+@bp.before_request
+def before_request():
+    print u"已启动的线程数:%d" % threading.active_count()
 
 @bp.route('/')
 def entry():

@@ -40,19 +40,19 @@ def test():
 
 @bp.before_request
 def before_request():
-    try:
-        vender = request.form['vender']
-        if vender in ["hw_port","zx_port","fh3000_port","fh4000_port"]:
-            workbook_path = current_app.config['VENDER_FILE_DICT'][vender]
-            g.wb = xlrd.open_workbook(workbook_path)
-        else:
-            pass
+    # try:
+    # vender = request.form['vender']
+    # if vender in ["hw_port","zx_port","fh3000_port","fh4000_port"]:
+    #     workbook_path = current_app.config['VENDER_FILE_DICT'][vender]
+    #     g.wb = xlrd.open_workbook(workbook_path)
+    # else:
+    #     pass
 
-    except:
-        username = current_app.config['USER']
-        passwd = current_app.config['PWD']
-        g.conn = MySQLdb.connect(host="127.0.0.1",user=username,passwd=passwd,charset='utf8') 
-        g.cursor = g.conn.cursor()
+    # except:
+    username = current_app.config['USER']
+    passwd = current_app.config['PWD']
+    g.conn = MySQLdb.connect(host="127.0.0.1",user=username,passwd=passwd,charset='utf8') 
+    g.cursor = g.conn.cursor()
 
 @bp.teardown_request   #是当request的context被弹出时，自动调用的函数。这里是关闭数据库。
 def teardown_request(exception):
@@ -101,37 +101,44 @@ def tree():
 
     return json.dumps(list_data)
 
+@bp.route('/generateRoute', methods=['POST'])
+def generateRoute():
+    adb = request.form["adb"]
+    atable = request.form['atable']
+    ano = request.form['ano']
 
-@bp.route('/dispatch', methods=['POST'])
-def dispatch():
-    source_table_name = request.form['atable']
-    source_table_row = int(request.form['ano'])
-    dest_table_name = request.form['ztable']
-    dest_table_row = int(request.form['zno'])
+    zdb = request.form["zdb"]
+    ztable = request.form['ztable']
+    zno = request.form['zno']
 
-    source_table = g.wb.sheet_by_name(source_table_name)
-    dest_table = g.wb.sheet_by_name(dest_table_name)
+    if adb!=zdb:
+        abort(500)
 
-    source_route_data_structure = data_strucure(source_table, source_table_row)
-    dest_route_data_structure = data_strucure(dest_table, dest_table_row)
+    sql = u"""
+        select * from {0}.{1} where 序号={2} union
+        select * from {3}.{4} where 序号={5}
+        """.format(adb, atable, ano, zdb, ztable, zno)
+    g.cursor.execute(sql)
+    val = g.cursor.fetchall()
 
-    route = "---##---*%s(%s-%s)%s-%s-%s(ODF:%s)---%s---%s---%s---%s(%s-%s)%s-%s-%s(ODF:%s)*---##---" %(source_route_data_structure.jf,
-                                                                                                      source_route_data_structure.jjh,
-                                                                                                      source_route_data_structure.jkh,
-                                                                                                      source_route_data_structure.cwh,
-                                                                                                      source_route_data_structure.dbm,
-                                                                                                      source_route_data_structure.dkh,
-                                                                                                      source_route_data_structure.odf,
-                                                                                                      source_route_data_structure.bd,
-                                                                                                      source_route_data_structure.lyxx,
-                                                                                                      dest_route_data_structure.bd,
-                                                                                                      dest_route_data_structure.jf,
-                                                                                                      dest_route_data_structure.jjh,
-                                                                                                      dest_route_data_structure.jkh,
-                                                                                                      dest_route_data_structure.cwh,
-                                                                                                      dest_route_data_structure.dbm,
-                                                                                                      dest_route_data_structure.dkh,
-                                                                                                      dest_route_data_structure.odf)
+
+    route = u"""
+                ---##---*{ajf}({ajj}-{ajk}){adk}(ODF:{aodf})---{abd}---{alyxx}---{zbd}---{zjf}({zjj}-{zjk}){zdk}(ODF:{zodf})*---##---"""\
+            .format(
+                ajf = val[0][1],
+                ajj = val[0][8],
+                ajk = val[0][9],
+                adk = val[0][10],
+                aodf = val[0][15],
+                abd = val[0][6],
+                alyxx = val[0][4],
+                zjf = val[1][1],
+                zjj = val[1][8],
+                zjk = val[1][9],
+                zdk = val[1][10],
+                zodf = val[1][15],
+                zbd = val[1][6]
+                )
     return route
 
 

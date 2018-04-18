@@ -418,6 +418,8 @@ function generatePortDg(id, tableName, data){
                     {field:"route",title:"波道路由",width:180,editor:"text"},
                     {field:"wavelength",title:"波长",width:50,editor:"text"},
                     {field:"neident",title:"网元标识",width:60,editor:"text"},
+                    {field:"jijiano",title:"机架编号",width:60,editor:"text",hidden:true},
+                    {field:"kuangno",title:"框编号",width:60,editor:"text",hidden:true},
                     {field:"lineport",title:"线路端口",width:80,editor:"text"},
                     {field:"port",title:"支路端口",width:80,editor:"text"},
                     {field:"linetype",title:"速率",width:40,editor:"text"},
@@ -425,8 +427,6 @@ function generatePortDg(id, tableName, data){
                     {field:"remark",title:"备注",width:180,editor:"text"},
                     {field:"odf",title:"ODF",width:120,editor:"text"},
                     {field:"system",title:"所属系统",width:80,editor:"text",hidden:true},
-                    {field:"jijiano",title:"机架编号",width:60,editor:"text",hidden:true},
-                    {field:"kuangno",title:"框编号",width:60,editor:"text",hidden:true},
                     {field:"boardname",title:"单板名称",width:60,editor:"text",hidden:true},
                     {field:"portindex",title:"端口编号",width:60,editor:"text",hidden:true},
                     {field:"rtx",title:"收/发",width:50,editor:"text",hidden:true}
@@ -592,7 +592,11 @@ $("#port_table_edit_window>>>a:eq(0)").linkbutton({
             url:"otn/edit",
             data:data,
             success:function(returnData){
-                alert("修改成功！")
+                $("#port_table_edit_window").window("close");
+                var db_table = $.data(document.body, "db_table");
+                var table = db_table[0].split("___")[0];
+                var vender = db_table[0].split("___")[1];
+                refreshPortDg(vender, table);
             },
             error:function(returnData){
                 alert("修改失败！")
@@ -621,6 +625,11 @@ $("#port_table_add_window>>>a:eq(0)").linkbutton({
             url:"otn/insert",
             data:data,
             success:function(returnData){
+                var db_table = $.data(document.body, "db_table");
+                var table = db_table[0].split("___")[0];
+                var vender = db_table[0].split("___")[1];
+                refreshPortDg(vender, table);
+                // refreshPortDg(db_table)
                 alert("添加成功！")
             },
             error:function(returnData){
@@ -658,16 +667,19 @@ $("#tab1_port_table_menu").menu({
             alert("删除该行");
         }
         else if(id=="tab1_table_menu_source"){
-            $("#atable").textbox("setValue", tablename);
-            $("#ano").textbox("setValue", row['no']);
-            $("#avender").textbox('setValue', dbname);
-            $("#vender").textbox('setValue',db);   //vender是hidden的input框
+            $("#generateRouteForm >>> tr:eq(0) >> input:eq(0)").textbox("setValue",tablename);
+            $("#generateRouteForm >>> tr:eq(0) >> input:eq(1)").textbox("setValue",dbname);
+            $("#generateRouteForm >>> tr:eq(0) >> input:eq(2)").textbox("setValue",row["no"]);
+            $("#generateRouteForm >>> tr:eq(0) >> input[name=adb]").val(db);
+            $("#generateRouteForm >>> tr:eq(0) >> input[name=atable]").val(table);
             $.data(document.body, "source", {vender:db,tablename:table,rows:[row]});    //otn/update需求的数据格式
         }
         else if(id=="tab1_table_menu_dest"){
-            $("#ztable").textbox("setValue", tablename);
-            $("#zno").textbox("setValue", row['no']);
-            $("#zvender").textbox('setText', dbname);
+            $("#generateRouteForm >>> tr:eq(1) >> input:eq(0)").textbox("setValue",tablename);
+            $("#generateRouteForm >>> tr:eq(1) >> input:eq(1)").textbox("setValue",dbname);
+            $("#generateRouteForm >>> tr:eq(1) >> input:eq(2)").textbox("setValue",row["no"]);
+            $("#generateRouteForm >>> tr:eq(1) >> input[name=zdb]").val(db);
+            $("#generateRouteForm >>> tr:eq(1) >> input[name=ztable]").val(table);
             $.data(document.body, "dest", {vender:db,tablename:table,rows:[row]});
         }
     }
@@ -750,14 +762,18 @@ function DownLoadFile(options){
 // 提交表单，查询路由资料
 function submitForm(){
     $("#cc").showLoading();
-    $('#ff').form('submit',{
-        url:'otn/dispatch',
+    $('#generateRouteForm').form('submit',{
+        url:'otn/generateRoute',
         onSubmit:function(){
             return $(this).form('enableValidation').form('validate');   // return false will stop the form submission
         },
         success:function(data){
             $('#output-box').textbox('setText',data);   //资源分配的输出框
             $("#cc").hideLoading();
+        },
+        error:function(data){
+            $("#cc").hideLoading();
+            alert("无法生成路由！")
         }
     });
 }
